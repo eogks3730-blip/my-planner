@@ -397,3 +397,1091 @@
               </label>
             </div>
           </div>
+
+          <div class="pt-2 border-t border-brand-200/60 flex items-center justify-between">
+            <span class="text-xs font-bold text-brand-700">예상 실수령액</span>
+            <span id="calc-net-preview" class="text-lg font-extrabold text-brand-600">77,360원</span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">정산 상태</label>
+            <div class="grid grid-cols-2 gap-1.5 bg-slate-100 p-1 rounded-xl">
+              <label class="cursor-pointer">
+                <input type="radio" name="settlementStatus" value="unpaid" checked class="sr-only peer" />
+                <div class="text-center py-2 rounded-lg text-xs font-bold text-slate-500 peer-checked:bg-amber-400 peer-checked:text-slate-900 shadow-2xs transition">
+                  정산예정
+                </div>
+              </label>
+              <label class="cursor-pointer">
+                <input type="radio" name="settlementStatus" value="paid" class="sr-only peer" />
+                <div class="text-center py-2 rounded-lg text-xs font-bold text-slate-500 peer-checked:bg-emerald-500 peer-checked:text-white shadow-2xs transition">
+                  입금완료
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <div>
+            <label for="lecture-payout-date" class="block text-xs font-bold text-slate-700 mb-1">정산 예정일 (선택)</label>
+            <input type="date" id="lecture-payout-date" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-400" />
+          </div>
+        </div>
+
+        <div class="space-y-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1.5">캘린더 뱃지 색상</label>
+            <div class="flex items-center gap-2.5" id="lecture-color-picker">
+              <label class="cursor-pointer"><input type="radio" name="lectureColor" value="pink" checked class="sr-only peer"><span class="w-7 h-7 rounded-full bg-pink-500 block ring-offset-2 peer-checked:ring-2 peer-checked:ring-pink-500"></span></label>
+              <label class="cursor-pointer"><input type="radio" name="lectureColor" value="indigo" class="sr-only peer"><span class="w-7 h-7 rounded-full bg-indigo-500 block ring-offset-2 peer-checked:ring-2 peer-checked:ring-indigo-500"></span></label>
+              <label class="cursor-pointer"><input type="radio" name="lectureColor" value="emerald" class="sr-only peer"><span class="w-7 h-7 rounded-full bg-emerald-500 block ring-offset-2 peer-checked:ring-2 peer-checked:ring-emerald-500"></span></label>
+              <label class="cursor-pointer"><input type="radio" name="lectureColor" value="amber" class="sr-only peer"><span class="w-7 h-7 rounded-full bg-amber-500 block ring-offset-2 peer-checked:ring-2 peer-checked:ring-amber-500"></span></label>
+              <label class="cursor-pointer"><input type="radio" name="lectureColor" value="violet" class="sr-only peer"><span class="w-7 h-7 rounded-full bg-violet-500 block ring-offset-2 peer-checked:ring-2 peer-checked:ring-violet-500"></span></label>
+              <label class="cursor-pointer"><input type="radio" name="lectureColor" value="sky" class="sr-only peer"><span class="w-7 h-7 rounded-full bg-sky-500 block ring-offset-2 peer-checked:ring-2 peer-checked:ring-sky-500"></span></label>
+            </div>
+          </div>
+
+          <div>
+            <label for="lecture-memo" class="block text-xs font-bold text-slate-700 mb-1">메모 (준비물, 교통비, 시간 등)</label>
+            <input type="text" id="lecture-memo" placeholder="예: 오전 9시~12시, 노트북 지참, 교통비 1만원 별도" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-400" />
+          </div>
+        </div>
+
+        <div class="pt-2 flex gap-2">
+          <button type="button" id="delete-lecture-btn" class="hidden px-4 py-3.5 rounded-2xl bg-rose-50 text-rose-600 font-bold text-sm hover:bg-rose-100 active:scale-95 transition">
+            삭제
+          </button>
+          <button type="submit" class="flex-1 py-3.5 rounded-2xl bg-gradient-to-r from-brand-600 to-brand-500 text-white font-extrabold text-sm shadow-lg shadow-brand-200 hover:opacity-95 active:scale-98 transition">
+            저장하기
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="agency-modal" class="fixed inset-0 z-50 hidden bg-slate-900/50 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 animate-fade-in">
+    <div class="bg-white w-full max-w-lg rounded-t-3xl sm:rounded-3xl shadow-2xl animate-slide-up">
+      <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+        <h2 id="agency-modal-title" class="text-lg font-extrabold text-slate-900">출강 업체 프리셋 추가</h2>
+        <button id="close-agency-modal" class="p-2 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 transition">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="agency-form" class="p-5 space-y-4">
+        <input type="hidden" id="agency-id" />
+
+        <div>
+          <label for="agency-name" class="block text-xs font-bold text-slate-700 mb-1">업체 / 학교 / 기관명 *</label>
+          <input type="text" id="agency-name" required placeholder="예: 대전평생교육진흥원" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigoSoft-500" />
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label for="agency-default-sessions" class="block text-xs font-bold text-slate-700 mb-1">기본 차시 수</label>
+            <input type="number" id="agency-default-sessions" value="2" min="0.5" step="0.5" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-bold text-slate-800" />
+          </div>
+          <div>
+            <label for="agency-default-rate" class="block text-xs font-bold text-slate-700 mb-1">차시당 단가 (원) *</label>
+            <input type="number" id="agency-default-rate" value="40000" min="0" step="1000" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-bold text-right text-slate-800" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1.5">기본 세금 공제 방식</label>
+          <div class="grid grid-cols-3 gap-1.5">
+            <label class="cursor-pointer">
+              <input type="radio" name="agencyTaxType" value="3.3" checked class="sr-only peer" />
+              <div class="text-center py-2 rounded-xl text-xs font-bold bg-slate-50 border border-slate-200 text-slate-600 peer-checked:bg-indigoSoft-600 peer-checked:text-white peer-checked:border-indigoSoft-600">
+                3.3% 공제
+              </div>
+            </label>
+            <label class="cursor-pointer">
+              <input type="radio" name="agencyTaxType" value="0" class="sr-only peer" />
+              <div class="text-center py-2 rounded-xl text-xs font-bold bg-slate-50 border border-slate-200 text-slate-600 peer-checked:bg-indigoSoft-600 peer-checked:text-white peer-checked:border-indigoSoft-600">
+                세전 전액
+              </div>
+            </label>
+            <label class="cursor-pointer">
+              <input type="radio" name="agencyTaxType" value="8.8" class="sr-only peer" />
+              <div class="text-center py-2 rounded-xl text-xs font-bold bg-slate-50 border border-slate-200 text-slate-600 peer-checked:bg-indigoSoft-600 peer-checked:text-white peer-checked:border-indigoSoft-600">
+                기타 8.8%
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1.5">업체 대표 색상</label>
+          <div class="flex items-center gap-2.5">
+            <label class="cursor-pointer"><input type="radio" name="agencyColor" value="pink" checked class="sr-only peer"><span class="w-7 h-7 rounded-full bg-pink-500 block ring-offset-2 peer-checked:ring-2 peer-checked:ring-pink-500"></span></label>
+            <label class="cursor-pointer"><input type="radio" name="agencyColor" value="indigo" class="sr-only peer"><span class="w-7 h-7 rounded-full bg-indigo-500 block ring-offset-2 peer-checked:ring-2 peer-checked:ring-indigo-500"></span></label>
+            <label class="cursor-pointer"><input type="radio" name="agencyColor" value="emerald" class="sr-only peer"><span class="w-7 h-7 rounded-full bg-emerald-500 block ring-offset-2 peer-checked:ring-2 peer-checked:ring-emerald-500"></span></label>
+            <label class="cursor-pointer"><input type="radio" name="agencyColor" value="amber" class="sr-only peer"><span class="w-7 h-7 rounded-full bg-amber-500 block ring-offset-2 peer-checked:ring-2 peer-checked:ring-amber-500"></span></label>
+            <label class="cursor-pointer"><input type="radio" name="agencyColor" value="violet" class="sr-only peer"><span class="w-7 h-7 rounded-full bg-violet-500 block ring-offset-2 peer-checked:ring-2 peer-checked:ring-violet-500"></span></label>
+            <label class="cursor-pointer"><input type="radio" name="agencyColor" value="sky" class="sr-only peer"><span class="w-7 h-7 rounded-full bg-sky-500 block ring-offset-2 peer-checked:ring-2 peer-checked:ring-sky-500"></span></label>
+          </div>
+        </div>
+
+        <div class="pt-2 flex gap-2">
+          <button type="button" id="delete-agency-btn" class="hidden px-4 py-3 rounded-2xl bg-rose-50 text-rose-600 font-bold text-sm hover:bg-rose-100">
+            삭제
+          </button>
+          <button type="submit" class="flex-1 py-3 rounded-2xl bg-indigoSoft-600 text-white font-extrabold text-sm shadow-lg shadow-indigo-200 hover:bg-indigoSoft-500 transition">
+            프리셋 저장
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="confirm-modal" class="fixed inset-0 z-50 hidden bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-xs w-full p-5 shadow-2xl space-y-4">
+      <h3 id="confirm-title" class="text-base font-extrabold text-slate-900">삭제 확인</h3>
+      <p id="confirm-message" class="text-xs text-slate-600 leading-relaxed">정말 삭제하시겠습니까?</p>
+      <div class="flex gap-2">
+        <button id="confirm-cancel-btn" class="flex-1 py-2.5 rounded-xl bg-slate-100 text-slate-700 font-bold text-xs hover:bg-slate-200">취소</button>
+        <button id="confirm-ok-btn" class="flex-1 py-2.5 rounded-xl bg-rose-500 text-white font-bold text-xs hover:bg-rose-600">확인</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container" class="fixed top-16 left-1/2 -translate-x-1/2 z-50 pointer-events-none flex flex-col items-center gap-2 w-full max-w-sm px-4"></div>
+
+  <script>
+    const STORAGE_KEY_LECTURES = 'instructor_ledger_lectures_v1';
+    const STORAGE_KEY_AGENCIES = 'instructor_ledger_agencies_v1';
+
+    const todayObj = new Date();
+    const formatDateStr = (d) => {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    };
+
+    const state = {
+      currentYear: todayObj.getFullYear(),
+      currentMonth: todayObj.getMonth(),
+      selectedDate: formatDateStr(todayObj),
+      activeTab: 'calendar',
+      lectures: [],
+      agencies: [],
+      filterStatus: 'all',
+      filterAgency: 'all',
+      isGrossManuallyEdited: false,
+      recurringWeeks: 4
+    };
+
+    const COLOR_MAP = {
+      pink: { bg: 'bg-pink-100', text: 'text-pink-700', dot: 'bg-pink-500', border: 'border-pink-200' },
+      indigo: { bg: 'bg-indigo-100', text: 'text-indigo-700', dot: 'bg-indigo-500', border: 'border-indigo-200' },
+      emerald: { bg: 'bg-emerald-100', text: 'text-emerald-700', dot: 'bg-emerald-500', border: 'border-emerald-200' },
+      amber: { bg: 'bg-amber-100', text: 'text-amber-800', dot: 'bg-amber-500', border: 'border-amber-200' },
+      violet: { bg: 'bg-violet-100', text: 'text-violet-700', dot: 'bg-violet-500', border: 'border-violet-200' },
+      sky: { bg: 'bg-sky-100', text: 'text-sky-700', dot: 'bg-sky-500', border: 'border-sky-200' }
+    };
+
+    const formatKRW = (num) => new Intl.NumberFormat('ko-KR').format(Math.round(num || 0)) + '원';
+
+    const calculateNetAmount = (gross, taxType) => {
+      const rate = parseFloat(taxType) || 0;
+      return Math.round(gross * (1 - rate / 100));
+    };
+
+    const showToast = (msg, type = 'success') => {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      const bgClass = type === 'error' ? 'bg-rose-600' : 'bg-slate-800';
+      toast.className = `${bgClass} text-white text-xs font-bold px-4 py-3 rounded-2xl shadow-xl flex items-center gap-2 animate-slide-up`;
+      toast.innerHTML = `<span>${type === 'error' ? '⚠️' : '✨'}</span><span>${msg}</span>`;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.3s';
+        setTimeout(() => toast.remove(), 300);
+      }, 2400);
+    };
+
+    const showConfirm = (title, message) => {
+      return new Promise((resolve) => {
+        const modal = document.getElementById('confirm-modal');
+        document.getElementById('confirm-title').textContent = title;
+        document.getElementById('confirm-message').textContent = message;
+        modal.classList.remove('hidden');
+
+        const cleanup = (result) => {
+          modal.classList.add('hidden');
+          resolve(result);
+        };
+        document.getElementById('confirm-ok-btn').onclick = () => cleanup(true);
+        document.getElementById('confirm-cancel-btn').onclick = () => cleanup(false);
+      });
+    };
+
+    function persistToLocalStorage() {
+      try {
+        localStorage.setItem(STORAGE_KEY_LECTURES, JSON.stringify(state.lectures));
+        localStorage.setItem(STORAGE_KEY_AGENCIES, JSON.stringify(state.agencies));
+      } catch (e) {
+        console.error('LocalStorage save failed:', e);
+        showToast('브라우저 저장 공간이 부족합니다.', 'error');
+      }
+    }
+
+    function loadFromLocalStorage() {
+      try {
+        const rawLectures = localStorage.getItem(STORAGE_KEY_LECTURES);
+        const rawAgencies = localStorage.getItem(STORAGE_KEY_AGENCIES);
+        state.lectures = rawLectures ? JSON.parse(rawLectures) : [];
+        state.agencies = rawAgencies ? JSON.parse(rawAgencies) : [];
+        state.lectures.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+        state.agencies.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+      } catch (e) {
+        console.error('LocalStorage load failed:', e);
+        state.lectures = [];
+        state.agencies = [];
+      }
+    }
+
+    function seedSampleData() {
+      const y = state.currentYear;
+      const m = String(state.currentMonth + 1).padStart(2, '0');
+      const sampleAgencies = [
+        { id: 'ag-sample-1', name: '한빛평생교육원', defaultSessions: 3, defaultRate: 45000, taxType: '3.3', color: 'pink' },
+        { id: 'ag-sample-2', name: '미래창의중학교', defaultSessions: 2, defaultRate: 40000, taxType: '3.3', color: 'indigo' },
+        { id: 'ag-sample-3', name: '청년취업아카데미', defaultSessions: 4, defaultRate: 50000, taxType: '3.3', color: 'emerald' }
+      ];
+
+      const sampleLectures = [
+        { id: 'lec-sample-1', date: `${y}-${m}-05`, agency: '한빛평생교육원', title: '스마트폰 활용 강사 과정', sessions: 3, rate: 45000, grossAmount: 135000, taxType: '3.3', netAmount: calculateNetAmount(135000, '3.3'), status: 'paid', payoutDate: `${y}-${m}-15`, color: 'pink', memo: '오전 10시~1시' },
+        { id: 'lec-sample-2', date: `${y}-${m}-12`, agency: '미래창의중학교', title: '진로체험 코딩 특강', sessions: 2, rate: 40000, grossAmount: 80000, taxType: '3.3', netAmount: calculateNetAmount(80000, '3.3'), status: 'paid', payoutDate: `${y}-${m}-20`, color: 'indigo', memo: '교무실 먼저 방문' },
+        { id: 'lec-sample-3', date: state.selectedDate, agency: '청년취업아카데미', title: '포트폴리오 실전 워크숍', sessions: 4, rate: 50000, grossAmount: 200000, taxType: '3.3', netAmount: calculateNetAmount(200000, '3.3'), status: 'unpaid', payoutDate: '', color: 'emerald', memo: '노트북 및 젠더 지참' }
+      ];
+
+      state.agencies = sampleAgencies;
+      state.lectures = sampleLectures.sort((a, b) => a.date.localeCompare(b.date));
+      persistToLocalStorage();
+      renderAll();
+      showToast('예시 데이터가 등록되고 저장되었습니다!');
+    }
+
+    function saveLectureData(lectureObj, existingId = null) {
+      if (existingId) {
+        const idx = state.lectures.findIndex(l => l.id === existingId);
+        if (idx > -1) state.lectures[idx] = { id: existingId, ...lectureObj };
+      } else {
+        state.lectures.push({ id: 'lec-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6), ...lectureObj });
+      }
+      state.lectures.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+      persistToLocalStorage();
+      renderAll();
+    }
+
+    function deleteLectureById(id) {
+      state.lectures = state.lectures.filter(l => l.id !== id);
+      persistToLocalStorage();
+      renderAll();
+      showToast('강의 일정이 삭제되었습니다.');
+    }
+
+    function toggleSettlementStatus(id) {
+      const target = state.lectures.find(l => l.id === id);
+      if (!target) return;
+      const newStatus = target.status === 'paid' ? 'unpaid' : 'paid';
+      saveLectureData({ ...target, status: newStatus }, id);
+      showToast(newStatus === 'paid' ? '입금 완료로 저장되었습니다! 💰' : '정산 예정으로 저장되었습니다.');
+    }
+
+    function saveAgencyData(agencyObj, existingId = null) {
+      if (existingId) {
+        const idx = state.agencies.findIndex(a => a.id === existingId);
+        if (idx > -1) state.agencies[idx] = { id: existingId, ...agencyObj };
+      } else {
+        state.agencies.push({ id: 'ag-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6), ...agencyObj });
+      }
+      state.agencies.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+      persistToLocalStorage();
+      renderAll();
+    }
+
+    function deleteAgencyById(id) {
+      state.agencies = state.agencies.filter(a => a.id !== id);
+      persistToLocalStorage();
+      renderAll();
+      showToast('업체 프리셋이 삭제되었습니다.');
+    }
+
+    function getMonthLectures() {
+      const prefix = `${state.currentYear}-${String(state.currentMonth + 1).padStart(2, '0')}`;
+      return state.lectures.filter(l => l.date && l.date.startsWith(prefix));
+    }
+
+    function renderAll() {
+      renderHeaderAndSummary();
+      renderCalendar();
+      renderSelectedDateLectures();
+      renderSettlementTab();
+      renderAgenciesTab();
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function renderHeaderAndSummary() {
+      const mDisplay = `${state.currentYear}년 ${state.currentMonth + 1}월`;
+      document.getElementById('current-month-btn').textContent = mDisplay;
+      document.getElementById('summary-month-badge').textContent = `${state.currentMonth + 1}월 정산 요약`;
+
+      const monthLectures = getMonthLectures();
+      const uniqueDays = new Set(monthLectures.map(l => l.date)).size;
+      const totalSessions = monthLectures.reduce((sum, l) => sum + (parseFloat(l.sessions) || 0), 0);
+      const totalGross = monthLectures.reduce((sum, l) => sum + (parseFloat(l.grossAmount) || 0), 0);
+      const totalNet = monthLectures.reduce((sum, l) => sum + (parseFloat(l.netAmount) || 0), 0);
+
+      const paidNet = monthLectures.filter(l => l.status === 'paid').reduce((sum, l) => sum + (parseFloat(l.netAmount) || 0), 0);
+      const unpaidNet = totalNet - paidNet;
+
+      document.getElementById('summary-days-sessions').textContent = `출강 ${uniqueDays}일 · 총 ${totalSessions}차시`;
+      document.getElementById('summary-net-amount').textContent = formatKRW(totalNet);
+      document.getElementById('summary-gross-amount').textContent = `세전 ${formatKRW(totalGross)}`;
+      document.getElementById('summary-paid-amount').textContent = formatKRW(paidNet);
+      document.getElementById('summary-unpaid-amount').textContent = formatKRW(unpaidNet);
+
+      const paidPct = totalNet > 0 ? Math.round((paidNet / totalNet) * 100) : 0;
+      const unpaidPct = totalNet > 0 ? 100 - paidPct : 0;
+      document.getElementById('paid-progress-bar').style.width = `${paidPct}%`;
+      document.getElementById('unpaid-progress-bar').style.width = `${unpaidPct}%`;
+    }
+
+    function renderCalendar() {
+      const grid = document.getElementById('calendar-grid');
+      grid.innerHTML = '';
+
+      const firstDayOfMonth = new Date(state.currentYear, state.currentMonth, 1).getDay();
+      const daysInMonth = new Date(state.currentYear, state.currentMonth + 1, 0).getDate();
+      const todayStr = formatDateStr(new Date());
+      const monthLectures = getMonthLectures();
+
+      const lecturesByDate = {};
+      monthLectures.forEach(lec => {
+        if (!lecturesByDate[lec.date]) lecturesByDate[lec.date] = [];
+        lecturesByDate[lec.date].push(lec);
+      });
+
+      for (let i = 0; i < firstDayOfMonth; i++) {
+        const emptyCell = document.createElement('div');
+        emptyCell.className = 'min-h-[68px] rounded-xl bg-slate-50/40';
+        grid.appendChild(emptyCell);
+      }
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        const dateStr = `${state.currentYear}-${String(state.currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const dayOfWeek = (firstDayOfMonth + day - 1) % 7;
+        const dayLectures = lecturesByDate[dateStr] || [];
+        const isSelected = state.selectedDate === dateStr;
+        const isToday = todayStr === dateStr;
+
+        const cell = document.createElement('button');
+        cell.type = 'button';
+        cell.className = `min-h-[72px] p-1 rounded-2xl border text-left flex flex-col justify-between transition relative overflow-hidden ${
+          isSelected ? 'border-brand-500 bg-brand-50/50 ring-2 ring-brand-200' : 'border-slate-100 bg-white hover:bg-slate-50'
+        }`;
+
+        let numColor = 'text-slate-700';
+        if (dayOfWeek === 0) numColor = 'text-rose-500';
+        if (dayOfWeek === 6) numColor = 'text-indigo-500';
+
+        let headerHtml = `<div class="flex items-center justify-between w-full px-0.5">
+          <span class="text-xs font-bold ${isToday ? 'bg-brand-500 text-white w-5 h-5 rounded-full flex items-center justify-center text-[11px]' : numColor}">
+            ${day}
+          </span>`;
+        if (dayLectures.length > 0) {
+          const totalDaySessions = dayLectures.reduce((s, l) => s + (parseFloat(l.sessions) || 0), 0);
+          headerHtml += `<span class="text-[9px] font-bold text-slate-400">${totalDaySessions}차</span>`;
+        }
+        headerHtml += `</div>`;
+
+        let badgesHtml = `<div class="w-full space-y-0.5 mt-1">`;
+        dayLectures.slice(0, 2).forEach(lec => {
+          const c = COLOR_MAP[lec.color] || COLOR_MAP.pink;
+          const shortAgency = lec.agency.length > 4 ? lec.agency.slice(0, 4) : lec.agency;
+          badgesHtml += `
+            <div class="${c.bg} ${c.text} text-[9px] font-bold px-1 py-0.5 rounded-md truncate leading-tight flex items-center gap-0.5">
+              <span class="w-1 h-1 rounded-full ${lec.status === 'paid' ? 'bg-emerald-500' : c.dot} shrink-0"></span>
+              <span class="truncate">${shortAgency}</span>
+            </div>
+          `;
+        });
+        if (dayLectures.length > 2) {
+          badgesHtml += `<div class="text-[9px] font-bold text-slate-400 text-center">+${dayLectures.length - 2}건</div>`;
+        }
+        badgesHtml += `</div>`;
+
+        cell.innerHTML = headerHtml + badgesHtml;
+        cell.addEventListener('click', () => {
+          state.selectedDate = dateStr;
+          renderCalendar();
+          renderSelectedDateLectures();
+          if (window.lucide) lucide.createIcons();
+        });
+
+        grid.appendChild(cell);
+      }
+    }
+
+    function renderSelectedDateLectures() {
+      const [y, m, d] = state.selectedDate.split('-').map(Number);
+      const dateObj = new Date(y, m - 1, d);
+      const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+      document.getElementById('selected-date-title').textContent = `${m}월 ${d}일 (${dayNames[dateObj.getDay()]})`;
+
+      const list = state.lectures.filter(l => l.date === state.selectedDate);
+      const totalDayNet = list.reduce((s, l) => s + (parseFloat(l.netAmount) || 0), 0);
+      document.getElementById('selected-date-subtitle').textContent =
+        list.length > 0 ? `총 ${list.length}건 · 실수령 ${formatKRW(totalDayNet)}` : '등록된 강의 일정이 없습니다.';
+
+      const container = document.getElementById('selected-date-lectures');
+      container.innerHTML = '';
+
+      if (list.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-6 bg-slate-50 rounded-2xl border border-dashed border-slate-200 space-y-2.5">
+            <p class="text-xs text-slate-500">이 날짜에 등록된 강의가 없어요.</p>
+            ${state.lectures.length === 0 ? `
+              <button type="button" id="load-sample-btn" class="text-xs font-bold text-indigoSoft-600 bg-indigoSoft-50 px-3 py-1.5 rounded-xl hover:bg-indigoSoft-100 transition">
+                ✨ 예시 데이터로 둘러보기
+              </button>
+            ` : ''}
+          </div>
+        `;
+        document.getElementById('load-sample-btn')?.addEventListener('click', seedSampleData);
+        return;
+      }
+
+      list.forEach(lec => container.appendChild(createLectureCardElement(lec)));
+    }
+
+    function createLectureCardElement(lec, showDate = false) {
+      const c = COLOR_MAP[lec.color] || COLOR_MAP.pink;
+      const isPaid = lec.status === 'paid';
+
+      const card = document.createElement('div');
+      card.className = 'bg-slate-50/80 hover:bg-white border border-slate-200/80 rounded-2xl p-3.5 transition shadow-2xs space-y-2.5';
+
+      card.innerHTML = `
+        <div class="flex items-start justify-between gap-2">
+          <div class="space-y-1 min-w-0 flex-1 cursor-pointer edit-lecture-trigger">
+            <div class="flex items-center gap-1.5 flex-wrap">
+              ${showDate ? `<span class="text-[11px] font-bold text-slate-500 bg-white px-2 py-0.5 rounded-md border border-slate-200">${lec.date.slice(5).replace('-', '/')}</span>` : ''}
+              <span class="${c.bg} ${c.text} text-[11px] font-extrabold px-2 py-0.5 rounded-lg">${lec.agency}</span>
+              <span class="text-xs font-bold text-slate-700 bg-white px-2 py-0.5 rounded-lg border border-slate-200">${lec.sessions}차시</span>
+            </div>
+            ${lec.title ? `<h4 class="text-sm font-bold text-slate-900 truncate pt-0.5">${lec.title}</h4>` : ''}
+            ${lec.memo ? `<p class="text-[11px] text-slate-500 truncate">📝 ${lec.memo}</p>` : ''}
+          </div>
+
+          <div class="text-right shrink-0">
+            <div class="text-sm font-extrabold text-slate-900">${formatKRW(lec.netAmount)}</div>
+            <div class="text-[10px] text-slate-400">
+              세전 ${formatKRW(lec.grossAmount)} (${lec.taxType === '0' ? '비과세' : lec.taxType + '%'})
+            </div>
+          </div>
+        </div>
+
+        <div class="pt-2 border-t border-slate-200/60 flex items-center justify-between">
+          <div class="text-[11px] text-slate-400">
+            ${lec.payoutDate ? `정산예정일: ${lec.payoutDate}` : `단가 ${formatKRW(lec.rate)} × ${lec.sessions}`}
+          </div>
+          <div class="flex items-center gap-1.5">
+            <button type="button" class="edit-lecture-btn px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-white border border-slate-200 text-slate-600 hover:bg-slate-100">수정</button>
+            <button type="button" class="toggle-status-btn px-2.5 py-1 rounded-lg text-[11px] font-bold transition flex items-center gap-1 ${
+              isPaid ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200' : 'bg-amber-100 text-amber-800 hover:bg-amber-200'
+            }">
+              <span>${isPaid ? '✅ 입금완료' : '⏳ 정산예정'}</span>
+            </button>
+          </div>
+        </div>
+      `;
+
+      card.querySelector('.edit-lecture-trigger').addEventListener('click', () => openLectureModal(lec));
+      card.querySelector('.edit-lecture-btn').addEventListener('click', () => openLectureModal(lec));
+      card.querySelector('.toggle-status-btn').addEventListener('click', () => toggleSettlementStatus(lec.id));
+
+      return card;
+    }
+
+    function renderSettlementTab() {
+      const monthLectures = getMonthLectures();
+      const agencySelect = document.getElementById('agency-filter-select');
+      const uniqueAgencies = [...new Set(monthLectures.map(l => l.agency))];
+      const currentVal = state.filterAgency;
+      agencySelect.innerHTML = `<option value="all">🏢 모든 출강 업체 보기 (${uniqueAgencies.length}곳)</option>`;
+      uniqueAgencies.forEach(ag => {
+        const opt = document.createElement('option');
+        opt.value = ag;
+        opt.textContent = ag;
+        if (ag === currentVal) opt.selected = true;
+        agencySelect.appendChild(opt);
+      });
+
+      const breakdownList = document.getElementById('agency-breakdown-list');
+      breakdownList.innerHTML = '';
+      if (uniqueAgencies.length === 0) {
+        breakdownList.innerHTML = `<div class="text-xs text-slate-400 py-2 px-1">이번 달 출강 내역이 없습니다.</div>`;
+      } else {
+        uniqueAgencies.forEach(ag => {
+          const agLecs = monthLectures.filter(l => l.agency === ag);
+          const agSessions = agLecs.reduce((s, l) => s + (parseFloat(l.sessions) || 0), 0);
+          const agNet = agLecs.reduce((s, l) => s + (parseFloat(l.netAmount) || 0), 0);
+          const unpaidCount = agLecs.filter(l => l.status !== 'paid').length;
+          const colorKey = agLecs[0]?.color || 'pink';
+          const c = COLOR_MAP[colorKey] || COLOR_MAP.pink;
+
+          const card = document.createElement('div');
+          card.className = 'bg-white border border-slate-200/80 rounded-2xl p-3 min-w-[145px] shrink-0 shadow-2xs space-y-1';
+          card.innerHTML = `
+            <div class="flex items-center justify-between">
+              <span class="w-2.5 h-2.5 rounded-full ${c.dot}"></span>
+              <span class="text-[10px] font-bold ${unpaidCount > 0 ? 'text-amber-600' : 'text-emerald-600'}">
+                ${unpaidCount > 0 ? `미정산 ${unpaidCount}건` : '모두 완료'}
+              </span>
+            </div>
+            <div class="text-xs font-extrabold text-slate-800 truncate">${ag}</div>
+            <div class="text-sm font-extrabold text-brand-600">${formatKRW(agNet)}</div>
+            <div class="text-[10px] text-slate-400">총 ${agLecs.length}회 · ${agSessions}차시</div>
+          `;
+          breakdownList.appendChild(card);
+        });
+      }
+
+      const filtered = monthLectures.filter(l => {
+        if (state.filterStatus !== 'all' && l.status !== state.filterStatus) return false;
+        if (state.filterAgency !== 'all' && l.agency !== state.filterAgency) return false;
+        return true;
+      });
+
+      const listContainer = document.getElementById('settlement-list-container');
+      listContainer.innerHTML = '';
+
+      if (filtered.length === 0) {
+        listContainer.innerHTML = `
+          <div class="bg-white rounded-3xl p-8 text-center border border-slate-100 space-y-2">
+            <p class="text-sm font-bold text-slate-600">조건에 맞는 정산 내역이 없습니다.</p>
+            <p class="text-xs text-slate-400">상단 필터를 변경하거나 새 강의를 등록해 보세요.</p>
+          </div>
+        `;
+        return;
+      }
+
+      filtered.forEach(lec => {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'bg-white rounded-3xl p-1 shadow-2xs border border-slate-100';
+        wrapper.appendChild(createLectureCardElement(lec, true));
+        listContainer.appendChild(wrapper);
+      });
+    }
+
+    function renderAgenciesTab() {
+      const container = document.getElementById('agencies-list-container');
+      container.innerHTML = '';
+
+      if (state.agencies.length === 0) {
+        container.innerHTML = `
+          <div class="bg-white rounded-3xl p-8 text-center border border-dashed border-slate-200 space-y-3">
+            <div class="w-12 h-12 rounded-2xl bg-indigoSoft-50 text-indigoSoft-600 flex items-center justify-center mx-auto">
+              <i data-lucide="building-2" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <p class="text-sm font-bold text-slate-700">저장된 출강 업체가 없습니다</p>
+              <p class="text-xs text-slate-400 mt-1">자주 출강하는 학원, 학교, 기관의 차시당 단가를 등록해 두면<br/>강의 등록 시 터치 한 번으로 자동 입력됩니다.</p>
+            </div>
+            <button type="button" id="empty-add-agency-btn" class="text-xs font-bold bg-indigoSoft-600 text-white px-4 py-2.5 rounded-xl shadow-sm">
+              + 첫 번째 업체 등록하기
+            </button>
+          </div>
+        `;
+        document.getElementById('empty-add-agency-btn')?.addEventListener('click', () => openAgencyModal());
+        return;
+      }
+
+      state.agencies.forEach(ag => {
+        const c = COLOR_MAP[ag.color] || COLOR_MAP.pink;
+        const card = document.createElement('div');
+        card.className = 'bg-white rounded-2xl p-4 border border-slate-100 shadow-2xs flex items-center justify-between gap-3';
+        card.innerHTML = `
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="w-10 h-10 rounded-2xl ${c.bg} ${c.text} flex items-center justify-center font-extrabold text-sm shrink-0">
+              ${ag.name.slice(0, 2)}
+            </div>
+            <div class="min-w-0">
+              <h4 class="text-sm font-extrabold text-slate-900 truncate">${ag.name}</h4>
+              <p class="text-xs text-slate-500 mt-0.5">
+                기본 ${ag.defaultSessions}차시 · 차시당 <strong class="text-slate-700">${formatKRW(ag.defaultRate)}</strong> · ${ag.taxType === '0' ? '세전' : ag.taxType + '% 공제'}
+              </p>
+            </div>
+          </div>
+          <button type="button" class="edit-agency-btn p-2 rounded-xl bg-slate-50 text-slate-500 hover:bg-slate-100 shrink-0">
+            <i data-lucide="pencil" class="w-4 h-4"></i>
+          </button>
+        `;
+        card.querySelector('.edit-agency-btn').addEventListener('click', () => openAgencyModal(ag));
+        container.appendChild(card);
+      });
+    }
+
+    function updateLecturePriceCalculation() {
+      const sessions = parseFloat(document.getElementById('lecture-sessions').value) || 0;
+      const rate = parseFloat(document.getElementById('lecture-rate').value) || 0;
+      const grossInput = document.getElementById('lecture-gross-amount');
+
+      if (!state.isGrossManuallyEdited) {
+        grossInput.value = Math.round(sessions * rate);
+      }
+
+      const gross = parseFloat(grossInput.value) || 0;
+      const taxType = document.querySelector('input[name="taxType"]:checked')?.value || '3.3';
+      const net = calculateNetAmount(gross, taxType);
+      document.getElementById('calc-net-preview').textContent = formatKRW(net);
+    }
+
+    function openLectureModal(lecture = null) {
+      const modal = document.getElementById('lecture-modal');
+      const form = document.getElementById('lecture-form');
+      form.reset();
+      state.isGrossManuallyEdited = false;
+
+      const chipsList = document.getElementById('preset-chips-list');
+      chipsList.innerHTML = '';
+      if (state.agencies.length === 0) {
+        chipsList.innerHTML = `<span class="text-[11px] text-slate-400 py-1">등록된 업체 프리셋이 없습니다.</span>`;
+      } else {
+        state.agencies.forEach(ag => {
+          const c = COLOR_MAP[ag.color] || COLOR_MAP.pink;
+          const chip = document.createElement('button');
+          chip.type = 'button';
+          chip.className = `${c.bg} ${c.text} border ${c.border} px-3 py-1.5 rounded-xl text-xs font-bold shrink-0 hover:opacity-90 active:scale-95 transition`;
+          chip.textContent = `${ag.name} (${ag.defaultSessions}차시)`;
+          chip.addEventListener('click', () => {
+            document.getElementById('lecture-agency').value = ag.name;
+            document.getElementById('lecture-sessions').value = ag.defaultSessions;
+            document.getElementById('lecture-rate').value = ag.defaultRate;
+            state.isGrossManuallyEdited = false;
+
+            const taxRadio = document.querySelector(`input[name="taxType"][value="${ag.taxType}"]`);
+            if (taxRadio) taxRadio.checked = true;
+
+            const colorRadio = document.querySelector(`input[name="lectureColor"][value="${ag.color}"]`);
+            if (colorRadio) colorRadio.checked = true;
+
+            updateLecturePriceCalculation();
+            showToast(`'${ag.name}' 단가 정보가 적용되었습니다.`);
+          });
+          chipsList.appendChild(chip);
+        });
+      }
+
+      const recurWrapper = document.getElementById('recurring-toggle-wrapper');
+      const recurOptions = document.getElementById('recurring-options');
+      document.getElementById('is-recurring-checkbox').checked = false;
+      recurOptions.classList.add('hidden');
+      state.recurringWeeks = 4;
+      document.getElementById('recurring-weeks-display').textContent = '4주';
+      document.querySelectorAll('.recur-day').forEach(cb => cb.checked = false);
+
+      if (lecture) {
+        document.getElementById('lecture-modal-title').textContent = '강의 · 정산 수정';
+        document.getElementById('lecture-id').value = lecture.id;
+        document.getElementById('lecture-date').value = lecture.date;
+        document.getElementById('lecture-agency').value = lecture.agency;
+        document.getElementById('lecture-title').value = lecture.title || '';
+        document.getElementById('lecture-sessions').value = lecture.sessions;
+        document.getElementById('lecture-rate').value = lecture.rate;
+        document.getElementById('lecture-gross-amount').value = lecture.grossAmount;
+        state.isGrossManuallyEdited = true;
+
+        const taxRadio = document.querySelector(`input[name="taxType"][value="${lecture.taxType}"]`);
+        if (taxRadio) taxRadio.checked = true;
+
+        const statusRadio = document.querySelector(`input[name="settlementStatus"][value="${lecture.status}"]`);
+        if (statusRadio) statusRadio.checked = true;
+
+        document.getElementById('lecture-payout-date').value = lecture.payoutDate || '';
+
+        const colorRadio = document.querySelector(`input[name="lectureColor"][value="${lecture.color || 'pink'}"]`);
+        if (colorRadio) colorRadio.checked = true;
+
+        document.getElementById('lecture-memo').value = lecture.memo || '';
+        document.getElementById('delete-lecture-btn').classList.remove('hidden');
+        recurWrapper.classList.add('hidden');
+      } else {
+        document.getElementById('lecture-modal-title').textContent = '강의 · 정산 등록';
+        document.getElementById('lecture-id').value = '';
+        document.getElementById('lecture-date').value = state.selectedDate;
+        document.getElementById('delete-lecture-btn').classList.add('hidden');
+        recurWrapper.classList.remove('hidden');
+      }
+
+      updateLecturePriceCalculation();
+      modal.classList.remove('hidden');
+    }
+
+    function openAgencyModal(agency = null) {
+      const modal = document.getElementById('agency-modal');
+      document.getElementById('agency-form').reset();
+
+      if (agency) {
+        document.getElementById('agency-modal-title').textContent = '업체 프리셋 수정';
+        document.getElementById('agency-id').value = agency.id;
+        document.getElementById('agency-name').value = agency.name;
+        document.getElementById('agency-default-sessions').value = agency.defaultSessions;
+        document.getElementById('agency-default-rate').value = agency.defaultRate;
+
+        const taxRadio = document.querySelector(`input[name="agencyTaxType"][value="${agency.taxType}"]`);
+        if (taxRadio) taxRadio.checked = true;
+
+        const colorRadio = document.querySelector(`input[name="agencyColor"][value="${agency.color || 'pink'}"]`);
+        if (colorRadio) colorRadio.checked = true;
+
+        document.getElementById('delete-agency-btn').classList.remove('hidden');
+      } else {
+        document.getElementById('agency-modal-title').textContent = '출강 업체 프리셋 추가';
+        document.getElementById('agency-id').value = '';
+        document.getElementById('delete-agency-btn').classList.add('hidden');
+      }
+
+      modal.classList.remove('hidden');
+    }
+
+    function generateRecurringDates(startDateStr, weeks, selectedWeekdays) {
+      const [y, m, d] = startDateStr.split('-').map(Number);
+      const startObj = new Date(y, m - 1, d);
+      const dates = new Set();
+
+      if (selectedWeekdays.length === 0) {
+        for (let w = 0; w < weeks; w++) {
+          const nextDate = new Date(y, m - 1, d + w * 7);
+          dates.add(formatDateStr(nextDate));
+        }
+      } else {
+        const startSunday = new Date(y, m - 1, d - startObj.getDay());
+        for (let w = 0; w < weeks; w++) {
+          selectedWeekdays.forEach(wd => {
+            const candidate = new Date(startSunday.getFullYear(), startSunday.getMonth(), startSunday.getDate() + w * 7 + wd);
+            if (candidate >= startObj) {
+              dates.add(formatDateStr(candidate));
+            }
+          });
+        }
+      }
+      return Array.from(dates).sort();
+    }
+
+    function updateRecurringPreview() {
+      const startDate = document.getElementById('lecture-date').value;
+      if (!startDate) return;
+      const selectedDays = Array.from(document.querySelectorAll('.recur-day:checked')).map(cb => Number(cb.value));
+      const dates = generateRecurringDates(startDate, state.recurringWeeks, selectedDays);
+      document.getElementById('recurring-preview-text').textContent = `총 ${dates.length}건의 강의 일정이 한 번에 등록됩니다.`;
+    }
+
+    function exportMonthToICS() {
+      const monthLectures = getMonthLectures();
+      if (monthLectures.length === 0) {
+        showToast('이번 달에 내보낼 강의 일정이 없습니다.', 'error');
+        return;
+      }
+
+      let icsContent = [
+        'BEGIN:VCALENDAR',
+        'VERSION:2.0',
+        'PRODID:-//Instructor Ledger//KR',
+        'CALSCALE:GREGORIAN',
+        'METHOD:PUBLISH'
+      ];
+
+      monthLectures.forEach(lec => {
+        const dateClean = lec.date.replace(/-/g, '');
+        const summary = `[강의] ${lec.agency} (${lec.sessions}차시)`;
+        const desc = `과정명: ${lec.title || '-'}\\n차시: ${lec.sessions}차시\\n예상 실수령액: ${formatKRW(lec.netAmount)}\\n상태: ${lec.status === 'paid' ? '입금완료' : '정산예정'}\\n메모: ${lec.memo || '-'}`;
+
+        icsContent.push(
+          'BEGIN:VEVENT',
+          `UID:${lec.id}@instructor-ledger.app`,
+          `DTSTAMP:${dateClean}T090000Z`,
+          `DTSTART;VALUE=DATE:${dateClean}`,
+          `DTEND;VALUE=DATE:${dateClean}`,
+          `SUMMARY:${summary}`,
+          `DESCRIPTION:${desc}`,
+          'END:VEVENT'
+        );
+      });
+
+      icsContent.push('END:VCALENDAR');
+
+      const blob = new Blob([icsContent.join('\r\n')], { type: 'text/calendar;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `강사일정_${state.currentYear}년_${state.currentMonth + 1}월.ics`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      showToast('캘린더 파일(.ics)이 다운로드되었습니다!');
+    }
+
+    function exportMonthToCSV() {
+      const monthLectures = getMonthLectures();
+      if (monthLectures.length === 0) {
+        showToast('이번 달에 다운로드할 정산 내역이 없습니다.', 'error');
+        return;
+      }
+
+      const headers = ['출강일자', '출강업체', '강의명', '차시', '차시당단가', '세전강사료', '세금공제율(%)', '예상실수령액', '정산상태', '정산예정일', '메모'];
+      const rows = monthLectures.map(l => [
+        l.date,
+        `"${(l.agency || '').replace(/"/g, '""')}"`,
+        `"${(l.title || '').replace(/"/g, '""')}"`,
+        l.sessions,
+        l.rate,
+        l.grossAmount,
+        l.taxType,
+        l.netAmount,
+        l.status === 'paid' ? '입금완료' : '정산예정',
+        l.payoutDate || '',
+        `"${(l.memo || '').replace(/"/g, '""')}"`
+      ]);
+
+      const csvString = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+      const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `강사정산내역_${state.currentYear}년_${state.currentMonth + 1}월.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      showToast('엑셀(CSV) 파일이 다운로드되었습니다!');
+    }
+
+    function bindEvents() {
+      document.querySelectorAll('.nav-tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const targetTab = btn.dataset.tab;
+          state.activeTab = targetTab;
+
+          document.querySelectorAll('.nav-tab-btn').forEach(b => {
+            b.classList.remove('active', 'text-brand-600', 'font-bold');
+            b.classList.add('text-slate-400', 'font-medium');
+          });
+          btn.classList.add('active', 'text-brand-600', 'font-bold');
+          btn.classList.remove('text-slate-400', 'font-medium');
+
+          document.getElementById('tab-calendar').classList.toggle('hidden', targetTab !== 'calendar');
+          document.getElementById('tab-settlement').classList.toggle('hidden', targetTab !== 'settlement');
+          document.getElementById('tab-agencies').classList.toggle('hidden', targetTab !== 'agencies');
+        });
+      });
+
+      document.getElementById('prev-month-btn').addEventListener('click', () => {
+        if (state.currentMonth === 0) {
+          state.currentYear--;
+          state.currentMonth = 11;
+        } else {
+          state.currentMonth--;
+        }
+        renderAll();
+      });
+
+      document.getElementById('next-month-btn').addEventListener('click', () => {
+        if (state.currentMonth === 11) {
+          state.currentYear++;
+          state.currentMonth = 0;
+        } else {
+          state.currentMonth++;
+        }
+        renderAll();
+      });
+
+      document.getElementById('go-today-btn').addEventListener('click', () => {
+        const now = new Date();
+        state.currentYear = now.getFullYear();
+        state.currentMonth = now.getMonth();
+        state.selectedDate = formatDateStr(now);
+        renderAll();
+        showToast('오늘 날짜로 이동했습니다.');
+      });
+
+      document.getElementById('add-lecture-selected-date-btn').addEventListener('click', () => openLectureModal());
+      document.getElementById('fab-add-lecture').addEventListener('click', () => openLectureModal());
+      document.getElementById('close-lecture-modal').addEventListener('click', () => document.getElementById('lecture-modal').classList.add('hidden'));
+
+      document.getElementById('open-add-agency-btn').addEventListener('click', () => openAgencyModal());
+      document.getElementById('close-agency-modal').addEventListener('click', () => document.getElementById('agency-modal').classList.add('hidden'));
+
+      document.getElementById('quick-go-agencies').addEventListener('click', () => {
+        document.getElementById('lecture-modal').classList.add('hidden');
+        document.querySelector('.nav-tab-btn[data-tab="agencies"]').click();
+      });
+
+      document.getElementById('dec-sessions-btn').addEventListener('click', () => {
+        const input = document.getElementById('lecture-sessions');
+        input.value = Math.max(0.5, (parseFloat(input.value) || 1) - 1);
+        state.isGrossManuallyEdited = false;
+        updateLecturePriceCalculation();
+      });
+
+      document.getElementById('inc-sessions-btn').addEventListener('click', () => {
+        const input = document.getElementById('lecture-sessions');
+        input.value = (parseFloat(input.value) || 0) + 1;
+        state.isGrossManuallyEdited = false;
+        updateLecturePriceCalculation();
+      });
+
+      document.getElementById('lecture-sessions').addEventListener('input', () => {
+        state.isGrossManuallyEdited = false;
+        updateLecturePriceCalculation();
+      });
+
+      document.getElementById('lecture-rate').addEventListener('input', () => {
+        state.isGrossManuallyEdited = false;
+        updateLecturePriceCalculation();
+      });
+
+      document.getElementById('lecture-gross-amount').addEventListener('input', () => {
+        state.isGrossManuallyEdited = true;
+        updateLecturePriceCalculation();
+      });
+
+      document.querySelectorAll('input[name="taxType"]').forEach(radio => {
+        radio.addEventListener('change', updateLecturePriceCalculation);
+      });
+
+      document.getElementById('is-recurring-checkbox').addEventListener('change', (e) => {
+        document.getElementById('recurring-options').classList.toggle('hidden', !e.target.checked);
+        updateRecurringPreview();
+      });
+
+      document.getElementById('dec-weeks-btn').addEventListener('click', () => {
+        if (state.recurringWeeks > 2) {
+          state.recurringWeeks--;
+          document.getElementById('recurring-weeks-display').textContent = `${state.recurringWeeks}주`;
+          updateRecurringPreview();
+        }
+      });
+
+      document.getElementById('inc-weeks-btn').addEventListener('click', () => {
+        if (state.recurringWeeks < 24) {
+          state.recurringWeeks++;
+          document.getElementById('recurring-weeks-display').textContent = `${state.recurringWeeks}주`;
+          updateRecurringPreview();
+        }
+      });
+
+      document.getElementById('lecture-date').addEventListener('change', updateRecurringPreview);
+      document.querySelectorAll('.recur-day').forEach(cb => cb.addEventListener('change', updateRecurringPreview));
+
+      document.getElementById('lecture-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const existingId = document.getElementById('lecture-id').value;
+        const startDate = document.getElementById('lecture-date').value;
+        const agency = document.getElementById('lecture-agency').value.trim();
+        const title = document.getElementById('lecture-title').value.trim();
+        const sessions = parseFloat(document.getElementById('lecture-sessions').value) || 0;
+        const rate = parseFloat(document.getElementById('lecture-rate').value) || 0;
+        const grossAmount = parseFloat(document.getElementById('lecture-gross-amount').value) || 0;
+        const taxType = document.querySelector('input[name="taxType"]:checked')?.value || '3.3';
+        const netAmount = calculateNetAmount(grossAmount, taxType);
+        const status = document.querySelector('input[name="settlementStatus"]:checked')?.value || 'unpaid';
+        const payoutDate = document.getElementById('lecture-payout-date').value;
+        const color = document.querySelector('input[name="lectureColor"]:checked')?.value || 'pink';
+        const memo = document.getElementById('lecture-memo').value.trim();
+
+        const isRecurring = !existingId && document.getElementById('is-recurring-checkbox').checked;
+
+        if (isRecurring) {
+          const selectedDays = Array.from(document.querySelectorAll('.recur-day:checked')).map(cb => Number(cb.value));
+          const targetDates = generateRecurringDates(startDate, state.recurringWeeks, selectedDays);
+
+          for (const dStr of targetDates) {
+            saveLectureData({
+              date: dStr, agency, title, sessions, rate, grossAmount, taxType, netAmount, status, payoutDate, color, memo
+            });
+          }
+          showToast(`총 ${targetDates.length}건의 반복 강의가 저장되었습니다!`);
+        } else {
+          saveLectureData({
+            date: startDate, agency, title, sessions, rate, grossAmount, taxType, netAmount, status, payoutDate, color, memo
+          }, existingId || null);
+          showToast(existingId ? '강의 내역이 수정·저장되었습니다.' : '새 강의가 저장되었습니다!');
+        }
+
+        state.selectedDate = startDate;
+        document.getElementById('lecture-modal').classList.add('hidden');
+      });
+
+      document.getElementById('delete-lecture-btn').addEventListener('click', async () => {
+        const id = document.getElementById('lecture-id').value;
+        if (!id) return;
+        const ok = await showConfirm('강의 일정 삭제', '이 강의 및 정산 기록을 삭제하시겠습니까?');
+        if (ok) {
+          deleteLectureById(id);
+          document.getElementById('lecture-modal').classList.add('hidden');
+        }
+      });
+
+      document.getElementById('agency-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const existingId = document.getElementById('agency-id').value;
+        const name = document.getElementById('agency-name').value.trim();
+        const defaultSessions = parseFloat(document.getElementById('agency-default-sessions').value) || 2;
+        const defaultRate = parseFloat(document.getElementById('agency-default-rate').value) || 0;
+        const taxType = document.querySelector('input[name="agencyTaxType"]:checked')?.value || '3.3';
+        const color = document.querySelector('input[name="agencyColor"]:checked')?.value || 'pink';
+
+        saveAgencyData({ name, defaultSessions, defaultRate, taxType, color }, existingId || null);
+        document.getElementById('agency-modal').classList.add('hidden');
+        showToast(existingId ? '업체 프리셋이 수정·저장되었습니다.' : '새 업체 프리셋이 저장되었습니다!');
+      });
+
+      document.getElementById('delete-agency-btn').addEventListener('click', async () => {
+        const id = document.getElementById('agency-id').value;
+        if (!id) return;
+        const ok = await showConfirm('업체 프리셋 삭제', '이 업체 프리셋을 삭제하시겠습니까? (기존 강의 기록은 유지됩니다)');
+        if (ok) {
+          deleteAgencyById(id);
+          document.getElementById('agency-modal').classList.add('hidden');
+        }
+      });
+
+      document.querySelectorAll('.status-filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          state.filterStatus = btn.dataset.statusFilter;
+          document.querySelectorAll('.status-filter-btn').forEach(b => {
+            b.classList.remove('active', 'bg-slate-800', 'text-white', 'font-bold');
+            b.classList.add('bg-slate-100', 'text-slate-600', 'font-semibold');
+          });
+          btn.classList.add('active', 'bg-slate-800', 'text-white', 'font-bold');
+          btn.classList.remove('bg-slate-100', 'text-slate-600', 'font-semibold');
+          renderSettlementTab();
+        });
+      });
+
+      document.getElementById('agency-filter-select').addEventListener('change', (e) => {
+        state.filterAgency = e.target.value;
+        renderSettlementTab();
+      });
+
+      document.getElementById('export-ics-btn').addEventListener('click', exportMonthToICS);
+      document.getElementById('export-csv-btn').addEventListener('click', exportMonthToCSV);
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      bindEvents();
+      loadFromLocalStorage();
+      renderAll();
+    });
+  </script>
+</body>
+</html>
