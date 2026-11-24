@@ -1,0 +1,1697 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>강사 강의·정산 가계부</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Pretendard / Inter 폰트 -->
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Pretendard', 'Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#fdf2f8',
+              100: '#fce7f3',
+              200: '#fbcfe8',
+              300: '#f9a8d4',
+              400: '#f472b6',
+              500: '#ec4899',
+              600: '#db2777',
+              700: '#be185d',
+            },
+            indigoSoft: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* 커스텀 스크롤바 및 모바일 터치 최적화 */
+    body {
+      background-color: #f8fafc;
+      -webkit-tap-highlight-color: transparent;
+      overscroll-behavior-y: none;
+    }
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    /* 바텀 시트 / 모달 애니메이션 */
+    @keyframes slideUp {
+      from { transform: translateY(100%); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .animate-slide-up {
+      animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    .animate-fade-in {
+      animation: fadeIn 0.2s ease-out forwards;
+    }
+    /* Safe area padding for iOS */
+    .pb-safe {
+      padding-bottom: env(safe-area-inset-bottom, 16px);
+    }
+  </style>
+</head>
+<body class="text-slate-800 antialiased selection:bg-brand-100 selection:text-brand-700">
+
+  <!-- 전체 앱 컨테이너 (모바일 중심 반응형 카드 레이아웃) -->
+  <div id="app" class="max-w-lg mx-auto min-h-screen bg-slate-50 relative pb-24 shadow-xl shadow-slate-200/60 border-x border-slate-100">
+
+    <!-- 상단 헤더 -->
+    <header class="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-slate-100 px-4 py-3.5 flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-2xl bg-gradient-to-br from-brand-500 to-indigoSoft-500 flex items-center justify-center text-white shadow-sm">
+          <i data-lucide="calendar-heart" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h1 class="text-base font-bold text-slate-900 leading-tight tracking-tight">강사 강의·정산 가계부</h1>
+          <p id="sync-status-text" class="text-[11px] text-slate-400 flex items-center gap-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block" id="sync-dot"></span>
+            <span id="sync-label">연결 중...</span>
+          </p>
+        </div>
+      </div>
+
+      <!-- 월 선택 네비게이션 -->
+      <div class="flex items-center bg-slate-100 rounded-xl p-1">
+        <button id="prev-month-btn" class="p-1.5 rounded-lg hover:bg-white text-slate-600 transition active:scale-95" aria-label="이전 달">
+          <i data-lucide="chevron-left" class="w-4 h-4"></i>
+        </button>
+        <button id="current-month-btn" class="px-2.5 py-1 text-sm font-bold text-slate-800 hover:text-brand-600 transition">
+          2026년 11월
+        </button>
+        <button id="next-month-btn" class="p-1.5 rounded-lg hover:bg-white text-slate-600 transition active:scale-95" aria-label="다음 달">
+          <i data-lucide="chevron-right" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- 메인 콘텐츠 영역 -->
+    <main class="px-4 pt-4 space-y-4">
+
+      <!-- 월별 핵심 요약 카드 (모든 탭 상단 혹은 캘린더/정산 탭에 유연하게 표시) -->
+      <section id="monthly-summary-card" class="bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 rounded-3xl p-5 text-white shadow-lg shadow-slate-300/50 relative overflow-hidden">
+        <!-- 배경 장식 원 -->
+        <div class="absolute -right-8 -top-8 w-32 h-32 rounded-full bg-brand-500/20 blur-2xl pointer-events-none"></div>
+        <div class="absolute -left-8 -bottom-8 w-28 h-28 rounded-full bg-indigoSoft-500/20 blur-2xl pointer-events-none"></div>
+
+        <div class="flex items-center justify-between mb-3 relative z-10">
+          <span class="text-xs font-medium text-slate-300 bg-white/10 px-2.5 py-1 rounded-full" id="summary-month-badge">
+            11월 정산 요약
+          </span>
+          <div class="flex items-center gap-1.5 text-xs text-slate-300">
+            <i data-lucide="clock" class="w-3.5 h-3.5 text-brand-300"></i>
+            <span id="summary-days-sessions">출강 0일 · 총 0차시</span>
+          </div>
+        </div>
+
+        <div class="mb-4 relative z-10">
+          <p class="text-xs text-slate-400 mb-0.5">예상 실수령액 (세금 공제 후)</p>
+          <div class="flex items-baseline justify-between">
+            <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-white" id="summary-net-amount">0원</h2>
+            <span class="text-xs text-slate-400" id="summary-gross-amount">세전 0원</span>
+          </div>
+        </div>
+
+        <!-- 입금 완료 vs 미정산 게이지 및 금액 -->
+        <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-3 space-y-2 relative z-10">
+          <div class="w-full h-2 bg-slate-700 rounded-full overflow-hidden flex">
+            <div id="paid-progress-bar" class="bg-emerald-400 h-full transition-all duration-500" style="width: 0%"></div>
+            <div id="unpaid-progress-bar" class="bg-amber-400 h-full transition-all duration-500" style="width: 0%"></div>
+          </div>
+          <div class="grid grid-cols-2 gap-2 text-xs pt-0.5">
+            <div class="flex items-center justify-between bg-black/20 rounded-xl px-2.5 py-1.5">
+              <span class="flex items-center gap-1.5 text-emerald-300 font-medium">
+                <span class="w-2 h-2 rounded-full bg-emerald-400"></span>입금완료
+              </span>
+              <span class="font-bold text-white" id="summary-paid-amount">0원</span>
+            </div>
+            <div class="flex items-center justify-between bg-black/20 rounded-xl px-2.5 py-1.5">
+              <span class="flex items-center gap-1.5 text-amber-300 font-medium">
+                <span class="w-2 h-2 rounded-full bg-amber-400"></span>정산예정
+              </span>
+              <span class="font-bold text-white" id="summary-unpaid-amount">0원</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= TAB 1: 캘린더 뷰 ================= -->
+      <div id="tab-calendar" class="space-y-4">
+        <!-- 캘린더 컨트롤 바 (오늘 버튼 & .ics 캘린더 내보내기) -->
+        <div class="flex items-center justify-between gap-2">
+          <button id="go-today-btn" class="text-xs font-semibold text-slate-600 bg-white border border-slate-200 px-3 py-2 rounded-xl hover:bg-slate-50 active:scale-95 transition flex items-center gap-1.5 shadow-sm">
+            <i data-lucide="calendar-check" class="w-3.5 h-3.5 text-brand-500"></i>
+            오늘로 이동
+          </button>
+
+          <button id="export-ics-btn" class="text-xs font-semibold text-indigoSoft-600 bg-indigoSoft-50 border border-indigoSoft-100 px-3 py-2 rounded-xl hover:bg-indigoSoft-100 active:scale-95 transition flex items-center gap-1.5 shadow-sm">
+            <i data-lucide="calendar-plus" class="w-3.5 h-3.5"></i>
+            구글/애플 캘린더 연동 (.ics)
+          </button>
+        </div>
+
+        <!-- 월간 달력 카드 -->
+        <div class="bg-white rounded-3xl p-3.5 shadow-sm border border-slate-100">
+          <!-- 요일 헤더 -->
+          <div class="grid grid-cols-7 text-center text-[11px] font-bold text-slate-400 pb-2 border-b border-slate-100">
+            <div class="text-rose-500">일</div>
+            <div>월</div>
+            <div>화</div>
+            <div>수</div>
+            <div>목</div>
+            <div>금</div>
+            <div class="text-indigo-500">토</div>
+          </div>
+          <!-- 날짜 그리드 -->
+          <div id="calendar-grid" class="grid grid-cols-7 gap-1 pt-2">
+            <!-- JS로 렌더링 -->
+          </div>
+        </div>
+
+        <!-- 선택된 날짜 상세 일정 섹션 -->
+        <div class="bg-white rounded-3xl p-4 shadow-sm border border-slate-100 space-y-3">
+          <div class="flex items-center justify-between">
+            <div>
+              <h3 class="text-base font-bold text-slate-900 flex items-center gap-2" id="selected-date-title">
+                11월 24일 (화)
+              </h3>
+              <p class="text-xs text-slate-500" id="selected-date-subtitle">등록된 강의 0건</p>
+            </div>
+            <button id="add-lecture-selected-date-btn" class="bg-brand-500 hover:bg-brand-600 text-white text-xs font-bold px-3.5 py-2.5 rounded-2xl shadow-md shadow-brand-200 flex items-center gap-1.5 active:scale-95 transition">
+              <i data-lucide="plus" class="w-4 h-4"></i>
+              강의 등록
+            </button>
+          </div>
+
+          <!-- 해당 날짜 강의 리스트 -->
+          <div id="selected-date-lectures" class="space-y-2.5">
+            <!-- JS로 렌더링 -->
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= TAB 2: 정산 내역 & 필터 뷰 ================= -->
+      <div id="tab-settlement" class="hidden space-y-4">
+        <!-- 필터 및 엑셀 내보내기 바 -->
+        <div class="bg-white rounded-3xl p-4 shadow-sm border border-slate-100 space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-bold text-slate-800 flex items-center gap-1.5">
+              <i data-lucide="filter" class="w-4 h-4 text-brand-500"></i>
+              정산 내역 필터
+            </h3>
+            <button id="export-csv-btn" class="text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-xl hover:bg-emerald-100 active:scale-95 transition flex items-center gap-1.5">
+              <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i>
+              엑셀(CSV) 다운로드
+            </button>
+          </div>
+
+          <!-- 정산 상태 필터 칩 -->
+          <div class="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+            <button data-status-filter="all" class="status-filter-btn active px-3.5 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-white transition shrink-0">
+              전체 내역
+            </button>
+            <button data-status-filter="unpaid" class="status-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition shrink-0">
+              ⏳ 정산 예정만
+            </button>
+            <button data-status-filter="paid" class="status-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition shrink-0">
+              ✅ 입금 완료만
+            </button>
+          </div>
+
+          <!-- 업체별 필터 드롭다운 -->
+          <div>
+            <select id="agency-filter-select" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-400">
+              <option value="all">🏢 모든 출강 업체 보기</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- 업체별 소계 요약 (접이식/가로 스크롤 카드) -->
+        <div id="agency-breakdown-container" class="space-y-2">
+          <h4 class="text-xs font-bold text-slate-500 px-1">업체별 이번 달 합계</h4>
+          <div id="agency-breakdown-list" class="flex gap-2.5 overflow-x-auto no-scrollbar pb-1">
+            <!-- JS로 렌더링 -->
+          </div>
+        </div>
+
+        <!-- 전체/필터링된 강의 리스트 -->
+        <div class="space-y-2.5" id="settlement-list-container">
+          <!-- JS로 렌더링 -->
+        </div>
+      </div>
+
+      <!-- ================= TAB 3: 자주 가는 업체·단가 프리셋 관리 ================= -->
+      <div id="tab-agencies" class="hidden space-y-4">
+        <div class="bg-white rounded-3xl p-4 shadow-sm border border-slate-100 flex items-center justify-between">
+          <div>
+            <h3 class="text-base font-bold text-slate-900">출강 업체 · 단가 프리셋</h3>
+            <p class="text-xs text-slate-500 mt-0.5">자주 가는 기관의 차시당 단가를 저장해 두세요.</p>
+          </div>
+          <button id="open-add-agency-btn" class="bg-indigoSoft-600 hover:bg-indigoSoft-500 text-white text-xs font-bold px-3.5 py-2.5 rounded-2xl shadow-md shadow-indigo-200 flex items-center gap-1.5 active:scale-95 transition">
+            <i data-lucide="plus" class="w-4 h-4"></i>
+            업체 추가
+          </button>
+        </div>
+
+        <!-- 업체 프리셋 목록 -->
+        <div id="agencies-list-container" class="space-y-2.5">
+          <!-- JS로 렌더링 -->
+        </div>
+
+        <!-- 데이터 백업/공유 안내 카드 -->
+        <div class="bg-indigoSoft-50/70 border border-indigoSoft-100 rounded-3xl p-4 space-y-2">
+          <div class="flex items-center gap-2 text-indigoSoft-600 font-bold text-xs">
+            <i data-lucide="cloud-check" class="w-4 h-4"></i>
+            <span>실시간 클라우드 동기화 안내</span>
+          </div>
+          <p class="text-xs text-slate-600 leading-relaxed">
+            등록한 모든 강의 일정과 정산 내역은 클라우드에 안전하게 자동 저장됩니다. 스마트폰과 PC 어디서든 같은 링크로 접속하면 최신 내역이 바로 동기화됩니다.
+          </p>
+          <div class="pt-1 flex items-center justify-between text-[11px] text-slate-400">
+            <span>동기화 ID: <code id="display-user-id" class="bg-white px-1.5 py-0.5 rounded border border-slate-200 text-slate-600 select-all">로딩중...</code></span>
+          </div>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- 플로팅 빠른 추가 버튼 (모바일 우측 하단) -->
+    <button id="fab-add-lecture" class="fixed bottom-24 right-5 z-30 w-14 h-14 rounded-full bg-gradient-to-tr from-brand-600 to-brand-400 text-white shadow-lg shadow-brand-300/80 flex items-center justify-center hover:scale-105 active:scale-95 transition" aria-label="새 강의 등록">
+      <i data-lucide="plus" class="w-7 h-7"></i>
+    </button>
+
+    <!-- 하단 탭 내비게이션 -->
+    <nav class="fixed bottom-0 left-0 right-0 z-30 max-w-lg mx-auto bg-white/95 backdrop-blur-md border-t border-slate-200/80 px-2 pt-2 pb-safe">
+      <div class="grid grid-cols-3 gap-1">
+        <button data-tab="calendar" class="nav-tab-btn active flex flex-col items-center justify-center py-1.5 rounded-2xl text-brand-600 font-bold transition">
+          <i data-lucide="calendar-days" class="w-5 h-5 mb-0.5"></i>
+          <span class="text-[11px]">캘린더</span>
+        </button>
+        <button data-tab="settlement" class="nav-tab-btn flex flex-col items-center justify-center py-1.5 rounded-2xl text-slate-400 hover:text-slate-600 font-medium transition">
+          <i data-lucide="wallet" class="w-5 h-5 mb-0.5"></i>
+          <span class="text-[11px]">정산내역</span>
+        </button>
+        <button data-tab="agencies" class="nav-tab-btn flex flex-col items-center justify-center py-1.5 rounded-2xl text-slate-400 hover:text-slate-600 font-medium transition">
+          <i data-lucide="building-2" class="w-5 h-5 mb-0.5"></i>
+          <span class="text-[11px]">업체관리</span>
+        </button>
+      </div>
+    </nav>
+
+  </div>
+
+  <!-- ================= 모달 1: 강의 및 정산 등록 / 수정 ================= -->
+  <div id="lecture-modal" class="fixed inset-0 z-50 hidden bg-slate-900/50 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 animate-fade-in">
+    <div class="bg-white w-full max-w-lg rounded-t-3xl sm:rounded-3xl max-h-[92vh] overflow-y-auto shadow-2xl animate-slide-up">
+      <!-- 모달 헤더 -->
+      <div class="sticky top-0 z-10 bg-white/95 backdrop-blur-sm px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+        <h2 id="lecture-modal-title" class="text-lg font-extrabold text-slate-900">강의 · 정산 등록</h2>
+        <button id="close-lecture-modal" class="p-2 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 transition">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="lecture-form" class="p-5 space-y-4">
+        <input type="hidden" id="lecture-id" />
+
+        <!-- 빠른 업체 프리셋 선택 칩 -->
+        <div id="preset-chips-wrapper" class="space-y-1.5">
+          <label class="text-xs font-bold text-slate-500 flex items-center justify-between">
+            <span>⚡ 자주 가는 업체 빠른 선택</span>
+            <button type="button" id="quick-go-agencies" class="text-brand-600 hover:underline font-semibold">+ 프리셋 관리</button>
+          </label>
+          <div id="preset-chips-list" class="flex gap-2 overflow-x-auto no-scrollbar py-1">
+            <!-- JS로 렌더링 -->
+          </div>
+        </div>
+
+        <!-- 날짜 & 반복 일정 옵션 -->
+        <div class="grid grid-cols-1 gap-3 bg-slate-50 p-3.5 rounded-2xl border border-slate-100">
+          <div class="flex items-center justify-between">
+            <label for="lecture-date" class="text-xs font-bold text-slate-700">출강 날짜 *</label>
+            <label id="recurring-toggle-wrapper" class="flex items-center gap-1.5 text-xs font-semibold text-indigoSoft-600 cursor-pointer">
+              <input type="checkbox" id="is-recurring-checkbox" class="rounded text-indigoSoft-600 focus:ring-indigoSoft-500 w-4 h-4" />
+              <span>매주 반복 일괄 등록</span>
+            </label>
+          </div>
+          <input type="date" id="lecture-date" required class="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-400" />
+
+          <!-- 반복 일정 설정 영역 (체크 시 노출) -->
+          <div id="recurring-options" class="hidden pt-2 border-t border-slate-200/80 space-y-2.5">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-semibold text-slate-600">반복 주수 (시작일 포함)</span>
+              <div class="flex items-center gap-2">
+                <button type="button" id="dec-weeks-btn" class="w-7 h-7 rounded-lg bg-white border border-slate-200 font-bold text-slate-600">-</button>
+                <span id="recurring-weeks-display" class="text-sm font-bold text-indigoSoft-600 w-10 text-center">4주</span>
+                <button type="button" id="inc-weeks-btn" class="w-7 h-7 rounded-lg bg-white border border-slate-200 font-bold text-slate-600">+</button>
+              </div>
+            </div>
+            <div>
+              <span class="text-xs font-semibold text-slate-600 block mb-1.5">추가 요일 선택 (선택 시 해당 주간 요일 모두 등록)</span>
+              <div class="grid grid-cols-7 gap-1 text-center">
+                <label class="cursor-pointer"><input type="checkbox" value="0" class="recur-day sr-only peer"><div class="py-1.5 rounded-lg text-xs font-bold bg-white border border-slate-200 peer-checked:bg-indigoSoft-600 peer-checked:text-white peer-checked:border-indigoSoft-600">일</div></label>
+                <label class="cursor-pointer"><input type="checkbox" value="1" class="recur-day sr-only peer"><div class="py-1.5 rounded-lg text-xs font-bold bg-white border border-slate-200 peer-checked:bg-indigoSoft-600 peer-checked:text-white peer-checked:border-indigoSoft-600">월</div></label>
+                <label class="cursor-pointer"><input type="checkbox" value="2" class="recur-day sr-only peer"><div class="py-1.5 rounded-lg text-xs font-bold bg-white border border-slate-200 peer-checked:bg-indigoSoft-600 peer-checked:text-white peer-checked:border-indigoSoft-600">화</div></label>
+                <label class="cursor-pointer"><input type="checkbox" value="3" class="recur-day sr-only peer"><div class="py-1.5 rounded-lg text-xs font-bold bg-white border border-slate-200 peer-checked:bg-indigoSoft-600 peer-checked:text-white peer-checked:border-indigoSoft-600">수</div></label>
+                <label class="cursor-pointer"><input type="checkbox" value="4" class="recur-day sr-only peer"><div class="py-1.5 rounded-lg text-xs font-bold bg-white border border-slate-200 peer-checked:bg-indigoSoft-600 peer-checked:text-white peer-checked:border-indigoSoft-600">목</div></label>
+                <label class="cursor-pointer"><input type="checkbox" value="5" class="recur-day sr-only peer"><div class="py-1.5 rounded-lg text-xs font-bold bg-white border border-slate-200 peer-checked:bg-indigoSoft-600 peer-checked:text-white peer-checked:border-indigoSoft-600">금</div></label>
+                <label class="cursor-pointer"><input type="checkbox" value="6" class="recur-day sr-only peer"><div class="py-1.5 rounded-lg text-xs font-bold bg-white border border-slate-200 peer-checked:bg-indigoSoft-600 peer-checked:text-white peer-checked:border-indigoSoft-600">토</div></label>
+              </div>
+            </div>
+            <p id="recurring-preview-text" class="text-[11px] text-indigoSoft-600 font-medium bg-indigoSoft-50 px-2.5 py-1.5 rounded-lg">
+              총 4건의 강의 일정이 한 번에 등록됩니다.
+            </p>
+          </div>
+        </div>
+
+        <!-- 업체명 & 강의명 -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label for="lecture-agency" class="block text-xs font-bold text-slate-700 mb-1">출강 업체 / 기관명 *</label>
+            <input type="text" id="lecture-agency" required placeholder="예: OO평생교육원, OO중학교" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-400" />
+          </div>
+          <div>
+            <label for="lecture-title" class="block text-xs font-bold text-slate-700 mb-1">강의명 / 과정명 (선택)</label>
+            <input type="text" id="lecture-title" placeholder="예: AI 활용 교육, 코딩 특강" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-400" />
+          </div>
+        </div>
+
+        <!-- 차시 수 & 차시당 단가 -->
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">차시 수 *</label>
+            <div class="flex items-center bg-slate-50 border border-slate-200 rounded-xl p-1">
+              <button type="button" id="dec-sessions-btn" class="w-9 h-9 rounded-lg bg-white shadow-xs font-bold text-slate-600 hover:bg-slate-100 active:scale-95">-</button>
+              <input type="number" id="lecture-sessions" value="2" min="0.5" step="0.5" required class="w-full text-center bg-transparent text-sm font-extrabold text-slate-800 focus:outline-none" />
+              <button type="button" id="inc-sessions-btn" class="w-9 h-9 rounded-lg bg-white shadow-xs font-bold text-slate-600 hover:bg-slate-100 active:scale-95">+</button>
+            </div>
+          </div>
+
+          <div>
+            <label for="lecture-rate" class="block text-xs font-bold text-slate-700 mb-1">차시당 단가 (원) *</label>
+            <input type="number" id="lecture-rate" value="40000" min="0" step="1000" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-bold text-right text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-400" />
+          </div>
+        </div>
+
+        <!-- 강사료 계산 및 세금 공제 방식 -->
+        <div class="bg-brand-50/60 border border-brand-100 rounded-2xl p-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-700">세전 총 강사료 (차시 × 단가)</span>
+            <div class="flex items-center gap-1">
+              <input type="number" id="lecture-gross-amount" class="w-28 text-right font-extrabold text-base text-slate-900 bg-white border border-brand-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-brand-400" />
+              <span class="text-sm font-bold text-slate-700">원</span>
+            </div>
+          </div>
+
+          <!-- 세금 공제 선택 -->
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1.5">세금 공제 방식</label>
+            <div class="grid grid-cols-3 gap-1.5">
+              <label class="cursor-pointer">
+                <input type="radio" name="taxType" value="3.3" checked class="sr-only peer" />
+                <div class="text-center py-2 px-1 rounded-xl text-xs font-bold bg-white border border-slate-200 text-slate-600 peer-checked:bg-brand-500 peer-checked:text-white peer-checked:border-brand-500 transition">
+                  3.3% 원천징수
+                </div>
+              </label>
+              <label class="cursor-pointer">
+                <input type="radio" name="taxType" value="0" class="sr-only peer" />
+                <div class="text-center py-2 px-1 rounded-xl text-xs font-bold bg-white border border-slate-200 text-slate-600 peer-checked:bg-brand-500 peer-checked:text-white peer-checked:border-brand-500 transition">
+                  세전 전액 (0%)
+                </div>
+              </label>
+              <label class="cursor-pointer">
+                <input type="radio" name="taxType" value="8.8" class="sr-only peer" />
+                <div class="text-center py-2 px-1 rounded-xl text-xs font-bold bg-white border border-slate-200 text-slate-600 peer-checked:bg-brand-500 peer-checked:text-white peer-checked:border-brand-500 transition">
+                  기타소득 8.8%
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <div class="pt-2 border-t border-brand-200/60 flex items-center justify-between">
+            <span class="text-xs font-bold text-brand-700">예상 실수령액</span>
+            <span id="calc-net-preview" class="text-lg font-extrabold text-brand-600">77,360원</span>
+          </div>
+        </div>
+
+        <!-- 정산 상태 및 정산 예정일 -->
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">정산 상태</label>
+            <div class="grid grid-cols-2 gap-1.5 bg-slate-100 p-1 rounded-xl">
+              <label class="cursor-pointer">
+                <input type="radio" name="settlementStatus" value="unpaid" checked class="sr-only peer" />
+                <div class="text-center py-2 rounded-lg text-xs font-bold text-slate-500 peer-checked:bg-amber-400 peer-checked:text-slate-900 shadow-2xs transition">
+                  정산예정
+                </div>
+              </label>
+              <label class="cursor-pointer">
+                <input type="radio" name="settlementStatus" value="paid" class="sr-only peer" />
+                <div class="text-center py-2 rounded-lg text-xs font-bold text-slate-500 peer-checked:bg-emerald-500 peer-checked:text-white shadow-2xs transition">
+                  입금완료
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <div>
+            <label for="lecture-payout-date" class="block text-xs font-bold text-slate-700 mb-1">정산 예정일 (선택)</label>
+            <input type="date" id="lecture-payout-date" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-400" />
+          </div>
+        </div>
+
+        <!-- 색상 태그 & 메모 -->
+        <div class="space-y-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1.5">캘린더 뱃지 색상</label>
+            <div class="flex items-center gap-2.5" id="lecture-color-picker">
+              <label class="cursor-pointer"><input type="radio" name="lectureColor" value="pink" checked class="sr-only peer"><span class="w-7 h-7 rounded-full bg-pink-500 block ring-offset-2 peer-checked:ring-2 peer-checked:ring-pink-500"></span></label>
+              <label class="cursor-pointer"><input type="radio" name="lectureColor" value="indigo" class="sr-only peer"><span class="w-7 h-7 rounded-full bg-indigo-500 block ring-offset-2 peer-checked:ring-2 peer-checked:ring-indigo-500"></span></label>
+              <label class="cursor-pointer"><input type="radio" name="lectureColor" value="emerald" class="sr-only peer"><span class="w-7 h-7 rounded-full bg-emerald-500 block ring-offset-2 peer-checked:ring-2 peer-checked:ring-emerald-500"></span></label>
+              <label class="cursor-pointer"><input type="radio" name="lectureColor" value="amber" class="sr-only peer"><span class="w-7 h-7 rounded-full bg-amber-500 block ring-offset-2 peer-checked:ring-2 peer-checked:ring-amber-500"></span></label>
+              <label class="cursor-pointer"><input type="radio" name="lectureColor" value="violet" class="sr-only peer"><span class="w-7 h-7 rounded-full bg-violet-500 block ring-offset-2 peer-checked:ring-2 peer-checked:ring-violet-500"></span></label>
+              <label class="cursor-pointer"><input type="radio" name="lectureColor" value="sky" class="sr-only peer"><span class="w-7 h-7 rounded-full bg-sky-500 block ring-offset-2 peer-checked:ring-2 peer-checked:ring-sky-500"></span></label>
+            </div>
+          </div>
+
+          <div>
+            <label for="lecture-memo" class="block text-xs font-bold text-slate-700 mb-1">메모 (준비물, 교통비, 시간 등)</label>
+            <input type="text" id="lecture-memo" placeholder="예: 오전 9시~12시, 노트북 지참, 교통비 1만원 별도" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-400" />
+          </div>
+        </div>
+
+        <!-- 저장 / 삭제 버튼 -->
+        <div class="pt-2 flex gap-2">
+          <button type="button" id="delete-lecture-btn" class="hidden px-4 py-3.5 rounded-2xl bg-rose-50 text-rose-600 font-bold text-sm hover:bg-rose-100 active:scale-95 transition">
+            삭제
+          </button>
+          <button type="submit" class="flex-1 py-3.5 rounded-2xl bg-gradient-to-r from-brand-600 to-brand-500 text-white font-extrabold text-sm shadow-lg shadow-brand-200 hover:opacity-95 active:scale-98 transition">
+            저장하기
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= 모달 2: 출강 업체 프리셋 등록/수정 ================= -->
+  <div id="agency-modal" class="fixed inset-0 z-50 hidden bg-slate-900/50 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 animate-fade-in">
+    <div class="bg-white w-full max-w-lg rounded-t-3xl sm:rounded-3xl shadow-2xl animate-slide-up">
+      <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+        <h2 id="agency-modal-title" class="text-lg font-extrabold text-slate-900">출강 업체 프리셋 추가</h2>
+        <button id="close-agency-modal" class="p-2 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 transition">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="agency-form" class="p-5 space-y-4">
+        <input type="hidden" id="agency-id" />
+
+        <div>
+          <label for="agency-name" class="block text-xs font-bold text-slate-700 mb-1">업체 / 학교 / 기관명 *</label>
+          <input type="text" id="agency-name" required placeholder="예: 대전평생교육진흥원" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigoSoft-500" />
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label for="agency-default-sessions" class="block text-xs font-bold text-slate-700 mb-1">기본 차시 수</label>
+            <input type="number" id="agency-default-sessions" value="2" min="0.5" step="0.5" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-bold text-slate-800" />
+          </div>
+          <div>
+            <label for="agency-default-rate" class="block text-xs font-bold text-slate-700 mb-1">차시당 단가 (원) *</label>
+            <input type="number" id="agency-default-rate" value="40000" min="0" step="1000" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-bold text-right text-slate-800" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1.5">기본 세금 공제 방식</label>
+          <div class="grid grid-cols-3 gap-1.5">
+            <label class="cursor-pointer">
+              <input type="radio" name="agencyTaxType" value="3.3" checked class="sr-only peer" />
+              <div class="text-center py-2 rounded-xl text-xs font-bold bg-slate-50 border border-slate-200 text-slate-600 peer-checked:bg-indigoSoft-600 peer-checked:text-white peer-checked:border-indigoSoft-600">
+                3.3% 공제
+              </div>
+            </label>
+            <label class="cursor-pointer">
+              <input type="radio" name="agencyTaxType" value="0" class="sr-only peer" />
+              <div class="text-center py-2 rounded-xl text-xs font-bold bg-slate-50 border border-slate-200 text-slate-600 peer-checked:bg-indigoSoft-600 peer-checked:text-white peer-checked:border-indigoSoft-600">
+                세전 전액
+              </div>
+            </label>
+            <label class="cursor-pointer">
+              <input type="radio" name="agencyTaxType" value="8.8" class="sr-only peer" />
+              <div class="text-center py-2 rounded-xl text-xs font-bold bg-slate-50 border border-slate-200 text-slate-600 peer-checked:bg-indigoSoft-600 peer-checked:text-white peer-checked:border-indigoSoft-600">
+                기타 8.8%
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1.5">업체 대표 색상</label>
+          <div class="flex items-center gap-2.5">
+            <label class="cursor-pointer"><input type="radio" name="agencyColor" value="pink" checked class="sr-only peer"><span class="w-7 h-7 rounded-full bg-pink-500 block ring-offset-2 peer-checked:ring-2 peer-checked:ring-pink-500"></span></label>
+            <label class="cursor-pointer"><input type="radio" name="agencyColor" value="indigo" class="sr-only peer"><span class="w-7 h-7 rounded-full bg-indigo-500 block ring-offset-2 peer-checked:ring-2 peer-checked:ring-indigo-500"></span></label>
+            <label class="cursor-pointer"><input type="radio" name="agencyColor" value="emerald" class="sr-only peer"><span class="w-7 h-7 rounded-full bg-emerald-500 block ring-offset-2 peer-checked:ring-2 peer-checked:ring-emerald-500"></span></label>
+            <label class="cursor-pointer"><input type="radio" name="agencyColor" value="amber" class="sr-only peer"><span class="w-7 h-7 rounded-full bg-amber-500 block ring-offset-2 peer-checked:ring-2 peer-checked:ring-amber-500"></span></label>
+            <label class="cursor-pointer"><input type="radio" name="agencyColor" value="violet" class="sr-only peer"><span class="w-7 h-7 rounded-full bg-violet-500 block ring-offset-2 peer-checked:ring-2 peer-checked:ring-violet-500"></span></label>
+            <label class="cursor-pointer"><input type="radio" name="agencyColor" value="sky" class="sr-only peer"><span class="w-7 h-7 rounded-full bg-sky-500 block ring-offset-2 peer-checked:ring-2 peer-checked:ring-sky-500"></span></label>
+          </div>
+        </div>
+
+        <div class="pt-2 flex gap-2">
+          <button type="button" id="delete-agency-btn" class="hidden px-4 py-3 rounded-2xl bg-rose-50 text-rose-600 font-bold text-sm hover:bg-rose-100">
+            삭제
+          </button>
+          <button type="submit" class="flex-1 py-3 rounded-2xl bg-indigoSoft-600 text-white font-extrabold text-sm shadow-lg shadow-indigo-200 hover:bg-indigoSoft-500 transition">
+            프리셋 저장
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 커스텀 확인 모달 (alert/confirm 대체) -->
+  <div id="confirm-modal" class="fixed inset-0 z-50 hidden bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-xs w-full p-5 shadow-2xl space-y-4">
+      <h3 id="confirm-title" class="text-base font-extrabold text-slate-900">삭제 확인</h3>
+      <p id="confirm-message" class="text-xs text-slate-600 leading-relaxed">정말 삭제하시겠습니까?</p>
+      <div class="flex gap-2">
+        <button id="confirm-cancel-btn" class="flex-1 py-2.5 rounded-xl bg-slate-100 text-slate-700 font-bold text-xs hover:bg-slate-200">취소</button>
+        <button id="confirm-ok-btn" class="flex-1 py-2.5 rounded-xl bg-rose-500 text-white font-bold text-xs hover:bg-rose-600">확인</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 토스트 알림 메시지 -->
+  <div id="toast-container" class="fixed top-16 left-1/2 -translate-x-1/2 z-50 pointer-events-none flex flex-col items-center gap-2 w-full max-w-sm px-4"></div>
+
+  <!-- Firebase & 앱 로직 -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, setDoc, addDoc, updateDoc, deleteDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    // ================= 1. 환경 변수 및 Firebase 초기화 =================
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'instructor-ledger-default';
+    let firebaseConfig = null;
+    try {
+      if (typeof __firebase_config !== 'undefined') {
+        firebaseConfig = JSON.parse(__firebase_config);
+      }
+    } catch (e) {
+      console.error("Firebase config parse error:", e);
+    }
+
+    let db = null;
+    let auth = null;
+    let currentUser = null;
+    let isCloudConnected = false;
+
+    // ================= 2. 앱 전역 상태 =================
+    const todayObj = new Date();
+    const formatDateStr = (d) => {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    };
+
+    const state = {
+      currentYear: todayObj.getFullYear(),
+      currentMonth: todayObj.getMonth(), // 0-indexed
+      selectedDate: formatDateStr(todayObj),
+      activeTab: 'calendar', // 'calendar' | 'settlement' | 'agencies'
+      lectures: [], // { id, date, agency, title, sessions, rate, grossAmount, taxType, netAmount, status, payoutDate, color, memo }
+      agencies: [], // { id, name, defaultSessions, defaultRate, taxType, color }
+      filterStatus: 'all', // 'all' | 'unpaid' | 'paid'
+      filterAgency: 'all',
+      isGrossManuallyEdited: false,
+      recurringWeeks: 4
+    };
+
+    // 색상 스타일 매핑
+    const COLOR_MAP = {
+      pink: { bg: 'bg-pink-100', text: 'text-pink-700', dot: 'bg-pink-500', border: 'border-pink-200', badge: 'bg-pink-500 text-white' },
+      indigo: { bg: 'bg-indigo-100', text: 'text-indigo-700', dot: 'bg-indigo-500', border: 'border-indigo-200', badge: 'bg-indigo-500 text-white' },
+      emerald: { bg: 'bg-emerald-100', text: 'text-emerald-700', dot: 'bg-emerald-500', border: 'border-emerald-200', badge: 'bg-emerald-500 text-white' },
+      amber: { bg: 'bg-amber-100', text: 'text-amber-800', dot: 'bg-amber-500', border: 'border-amber-200', badge: 'bg-amber-500 text-white' },
+      violet: { bg: 'bg-violet-100', text: 'text-violet-700', dot: 'bg-violet-500', border: 'border-violet-200', badge: 'bg-violet-500 text-white' },
+      sky: { bg: 'bg-sky-100', text: 'text-sky-700', dot: 'bg-sky-500', border: 'border-sky-200', badge: 'bg-sky-500 text-white' }
+    };
+
+    // ================= 3. 유틸리티 함수 =================
+    const formatKRW = (num) => {
+      return new Intl.NumberFormat('ko-KR').format(Math.round(num || 0)) + '원';
+    };
+
+    const calculateNetAmount = (gross, taxType) => {
+      const rate = parseFloat(taxType) || 0;
+      return Math.round(gross * (1 - rate / 100));
+    };
+
+    const showToast = (msg, type = 'success') => {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      const bgClass = type === 'error' ? 'bg-rose-600' : 'bg-slate-800';
+      toast.className = `${bgClass} text-white text-xs font-bold px-4 py-3 rounded-2xl shadow-xl flex items-center gap-2 animate-slide-up`;
+      toast.innerHTML = `<span>${type === 'error' ? '⚠️' : '✨'}</span><span>${msg}</span>`;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.3s';
+        setTimeout(() => toast.remove(), 300);
+      }, 2400);
+    };
+
+    const showConfirm = (title, message) => {
+      return new Promise((resolve) => {
+        const modal = document.getElementById('confirm-modal');
+        document.getElementById('confirm-title').textContent = title;
+        document.getElementById('confirm-message').textContent = message;
+        modal.classList.remove('hidden');
+
+        const cleanup = (result) => {
+          modal.classList.add('hidden');
+          resolve(result);
+        };
+        document.getElementById('confirm-ok-btn').onclick = () => cleanup(true);
+        document.getElementById('confirm-cancel-btn').onclick = () => cleanup(false);
+      });
+    };
+
+    // ================= 4. Firestore 동기화 설정 =================
+    async function initFirebaseSync() {
+      const syncDot = document.getElementById('sync-dot');
+      const syncLabel = document.getElementById('sync-label');
+
+      if (!firebaseConfig) {
+        syncDot.className = 'w-1.5 h-1.5 rounded-full bg-slate-400 inline-block';
+        syncLabel.textContent = '오프라인 세션 모드';
+        loadSampleDataIfEmpty();
+        renderAll();
+        return;
+      }
+
+      try {
+        const app = initializeApp(firebaseConfig);
+        auth = getAuth(app);
+        db = getFirestore(app);
+
+        // RULE 3: Auth Before Queries
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+          await signInWithCustomToken(auth, __initial_auth_token);
+        } else {
+          await signInAnonymously(auth);
+        }
+
+        onAuthStateChanged(auth, (user) => {
+          if (!user) return;
+          currentUser = user;
+          isCloudConnected = true;
+          syncDot.className = 'w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block';
+          syncLabel.textContent = '클라우드 실시간 동기화됨';
+          document.getElementById('display-user-id').textContent = user.uid;
+
+          subscribeFirestoreData(user.uid);
+        });
+      } catch (err) {
+        console.error("Firebase init failed:", err);
+        syncDot.className = 'w-1.5 h-1.5 rounded-full bg-rose-400 inline-block';
+        syncLabel.textContent = '동기화 연결 실패 (임시 모드)';
+        renderAll();
+      }
+    }
+
+    function subscribeFirestoreData(userId) {
+      if (!db || !userId) return;
+
+      // RULE 1: Strict Paths (/artifacts/{appId}/users/{userId}/{collectionName})
+      // RULE 2: No Complex Queries (fetch all with collection(), sort in JS)
+      const lecturesRef = collection(db, 'artifacts', appId, 'users', userId, 'lectures');
+      onSnapshot(lecturesRef, (snapshot) => {
+        state.lectures = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        state.lectures.sort((a, b) => a.date.localeCompare(b.date));
+        renderAll();
+      }, (error) => {
+        console.error("Lectures snapshot error:", error);
+      });
+
+      const agenciesRef = collection(db, 'artifacts', appId, 'users', userId, 'agencies');
+      onSnapshot(agenciesRef, (snapshot) => {
+        state.agencies = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        state.agencies.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+        renderAll();
+      }, (error) => {
+        console.error("Agencies snapshot error:", error);
+      });
+    }
+
+    // 샘플 데이터 채우기 (빈 상태 온보딩용)
+    async function seedSampleData() {
+      const y = state.currentYear;
+      const m = String(state.currentMonth + 1).padStart(2, '0');
+      const sampleAgencies = [
+        { name: '한빛평생교육원', defaultSessions: 3, defaultRate: 45000, taxType: '3.3', color: 'pink' },
+        { name: '미래창의중학교', defaultSessions: 2, defaultRate: 40000, taxType: '3.3', color: 'indigo' },
+        { name: '청년취업아카데미', defaultSessions: 4, defaultRate: 50000, taxType: '3.3', color: 'emerald' }
+      ];
+
+      const sampleLectures = [
+        { date: `${y}-${m}-05`, agency: '한빛평생교육원', title: '스마트폰 활용 강사 과정', sessions: 3, rate: 45000, grossAmount: 135000, taxType: '3.3', netAmount: calculateNetAmount(135000, '3.3'), status: 'paid', payoutDate: `${y}-${m}-15`, color: 'pink', memo: '오전 10시~1시' },
+        { date: `${y}-${m}-12`, agency: '미래창의중학교', title: '진로체험 코딩 특강', sessions: 2, rate: 40000, grossAmount: 80000, taxType: '3.3', netAmount: calculateNetAmount(80000, '3.3'), status: 'paid', payoutDate: `${y}-${m}-20`, color: 'indigo', memo: '교무실 먼저 방문' },
+        { date: state.selectedDate, agency: '청년취업아카데미', title: '포트폴리오 실전 워크숍', sessions: 4, rate: 50000, grossAmount: 200000, taxType: '3.3', netAmount: calculateNetAmount(200000, '3.3'), status: 'unpaid', payoutDate: '', color: 'emerald', memo: '노트북 및 젠더 지참' }
+      ];
+
+      if (isCloudConnected && currentUser && db) {
+        const agCol = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'agencies');
+        const lecCol = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'lectures');
+        for (const ag of sampleAgencies) await addDoc(agCol, ag);
+        for (const lec of sampleLectures) await addDoc(lecCol, lec);
+      } else {
+        sampleAgencies.forEach((a, i) => state.agencies.push({ id: 'ag-' + i, ...a }));
+        sampleLectures.forEach((l, i) => state.lectures.push({ id: 'lec-' + i, ...l }));
+        renderAll();
+      }
+      showToast('예시 강의 및 업체 데이터가 등록되었습니다!');
+    }
+
+    function loadSampleDataIfEmpty() {
+      // 오프라인 데모 시 초기 안내
+    }
+
+    // ================= 5. CRUD 액션 함수 =================
+    async function saveLectureData(lectureObj, existingId = null) {
+      if (isCloudConnected && currentUser && db) {
+        if (existingId) {
+          const docRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'lectures', existingId);
+          await updateDoc(docRef, lectureObj);
+        } else {
+          const colRef = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'lectures');
+          await addDoc(colRef, lectureObj);
+        }
+      } else {
+        if (existingId) {
+          const idx = state.lectures.findIndex(l => l.id === existingId);
+          if (idx > -1) state.lectures[idx] = { id: existingId, ...lectureObj };
+        } else {
+          state.lectures.push({ id: 'lec-' + Date.now() + Math.random(), ...lectureObj });
+        }
+        renderAll();
+      }
+    }
+
+    async function deleteLectureById(id) {
+      if (isCloudConnected && currentUser && db) {
+        await deleteDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'lectures', id));
+      } else {
+        state.lectures = state.lectures.filter(l => l.id !== id);
+        renderAll();
+      }
+      showToast('강의 일정이 삭제되었습니다.');
+    }
+
+    async function toggleSettlementStatus(id) {
+      const target = state.lectures.find(l => l.id === id);
+      if (!target) return;
+      const newStatus = target.status === 'paid' ? 'unpaid' : 'paid';
+      await saveLectureData({ ...target, status: newStatus }, id);
+      showToast(newStatus === 'paid' ? '입금 완료 처리되었습니다! 💰' : '정산 예정으로 변경되었습니다.');
+    }
+
+    async function saveAgencyData(agencyObj, existingId = null) {
+      if (isCloudConnected && currentUser && db) {
+        if (existingId) {
+          await updateDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'agencies', existingId), agencyObj);
+        } else {
+          await addDoc(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'agencies'), agencyObj);
+        }
+      } else {
+        if (existingId) {
+          const idx = state.agencies.findIndex(a => a.id === existingId);
+          if (idx > -1) state.agencies[idx] = { id: existingId, ...agencyObj };
+        } else {
+          state.agencies.push({ id: 'ag-' + Date.now(), ...agencyObj });
+        }
+        renderAll();
+      }
+    }
+
+    async function deleteAgencyById(id) {
+      if (isCloudConnected && currentUser && db) {
+        await deleteDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'agencies', id));
+      } else {
+        state.agencies = state.agencies.filter(a => a.id !== id);
+        renderAll();
+      }
+      showToast('업체 프리셋이 삭제되었습니다.');
+    }
+
+    // ================= 6. UI 렌더링 함수 =================
+    function getMonthLectures() {
+      const prefix = `${state.currentYear}-${String(state.currentMonth + 1).padStart(2, '0')}`;
+      return state.lectures.filter(l => l.date && l.date.startsWith(prefix));
+    }
+
+    function renderAll() {
+      renderHeaderAndSummary();
+      renderCalendar();
+      renderSelectedDateLectures();
+      renderSettlementTab();
+      renderAgenciesTab();
+      lucide.createIcons();
+    }
+
+    function renderHeaderAndSummary() {
+      const mDisplay = `${state.currentYear}년 ${state.currentMonth + 1}월`;
+      document.getElementById('current-month-btn').textContent = mDisplay;
+      document.getElementById('summary-month-badge').textContent = `${state.currentMonth + 1}월 정산 요약`;
+
+      const monthLectures = getMonthLectures();
+      const uniqueDays = new Set(monthLectures.map(l => l.date)).size;
+      const totalSessions = monthLectures.reduce((sum, l) => sum + (parseFloat(l.sessions) || 0), 0);
+      const totalGross = monthLectures.reduce((sum, l) => sum + (parseFloat(l.grossAmount) || 0), 0);
+      const totalNet = monthLectures.reduce((sum, l) => sum + (parseFloat(l.netAmount) || 0), 0);
+
+      const paidNet = monthLectures
+        .filter(l => l.status === 'paid')
+        .reduce((sum, l) => sum + (parseFloat(l.netAmount) || 0), 0);
+      const unpaidNet = totalNet - paidNet;
+
+      document.getElementById('summary-days-sessions').textContent = `출강 ${uniqueDays}일 · 총 ${totalSessions}차시`;
+      document.getElementById('summary-net-amount').textContent = formatKRW(totalNet);
+      document.getElementById('summary-gross-amount').textContent = `세전 ${formatKRW(totalGross)}`;
+      document.getElementById('summary-paid-amount').textContent = formatKRW(paidNet);
+      document.getElementById('summary-unpaid-amount').textContent = formatKRW(unpaidNet);
+
+      const paidPct = totalNet > 0 ? Math.round((paidNet / totalNet) * 100) : 0;
+      const unpaidPct = totalNet > 0 ? 100 - paidPct : 0;
+      document.getElementById('paid-progress-bar').style.width = `${paidPct}%`;
+      document.getElementById('unpaid-progress-bar').style.width = `${unpaidPct}%`;
+    }
+
+    function renderCalendar() {
+      const grid = document.getElementById('calendar-grid');
+      grid.innerHTML = '';
+
+      const firstDayOfMonth = new Date(state.currentYear, state.currentMonth, 1).getDay();
+      const daysInMonth = new Date(state.currentYear, state.currentMonth + 1, 0).getDate();
+      const todayStr = formatDateStr(new Date());
+      const monthLectures = getMonthLectures();
+
+      // 날짜별 강의 맵핑
+      const lecturesByDate = {};
+      monthLectures.forEach(lec => {
+        if (!lecturesByDate[lec.date]) lecturesByDate[lec.date] = [];
+        lecturesByDate[lec.date].push(lec);
+      });
+
+      // 앞쪽 빈 칸
+      for (let i = 0; i < firstDayOfMonth; i++) {
+        const emptyCell = document.createElement('div');
+        emptyCell.className = 'min-h-[68px] rounded-xl bg-slate-50/40';
+        grid.appendChild(emptyCell);
+      }
+
+      // 날짜 셀 생성
+      for (let day = 1; day <= daysInMonth; day++) {
+        const dateStr = `${state.currentYear}-${String(state.currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const dayOfWeek = (firstDayOfMonth + day - 1) % 7;
+        const dayLectures = lecturesByDate[dateStr] || [];
+        const isSelected = state.selectedDate === dateStr;
+        const isToday = todayStr === dateStr;
+
+        const cell = document.createElement('button');
+        cell.type = 'button';
+        cell.className = `min-h-[72px] p-1 rounded-2xl border text-left flex flex-col justify-between transition relative overflow-hidden ${
+          isSelected
+            ? 'border-brand-500 bg-brand-50/50 ring-2 ring-brand-200'
+            : 'border-slate-100 bg-white hover:bg-slate-50'
+        }`;
+
+        // 날짜 숫자 색상
+        let numColor = 'text-slate-700';
+        if (dayOfWeek === 0) numColor = 'text-rose-500';
+        if (dayOfWeek === 6) numColor = 'text-indigo-500';
+
+        // 상단 날짜 숫자
+        let headerHtml = `<div class="flex items-center justify-between w-full px-0.5">
+          <span class="text-xs font-bold ${isToday ? 'bg-brand-500 text-white w-5 h-5 rounded-full flex items-center justify-center text-[11px]' : numColor}">
+            ${day}
+          </span>`;
+        if (dayLectures.length > 0) {
+          const totalDaySessions = dayLectures.reduce((s, l) => s + (parseFloat(l.sessions) || 0), 0);
+          headerHtml += `<span class="text-[9px] font-bold text-slate-400">${totalDaySessions}차</span>`;
+        }
+        headerHtml += `</div>`;
+
+        // 강의 뱃지 리스트 (최대 2개 표시 + 나머지 카운트)
+        let badgesHtml = `<div class="w-full space-y-0.5 mt-1">`;
+        dayLectures.slice(0, 2).forEach(lec => {
+          const c = COLOR_MAP[lec.color] || COLOR_MAP.pink;
+          const shortAgency = lec.agency.length > 4 ? lec.agency.slice(0, 4) : lec.agency;
+          badgesHtml += `
+            <div class="${c.bg} ${c.text} text-[9px] font-bold px-1 py-0.5 rounded-md truncate leading-tight flex items-center gap-0.5">
+              <span class="w-1 h-1 rounded-full ${lec.status === 'paid' ? 'bg-emerald-500' : c.dot} shrink-0"></span>
+              <span class="truncate">${shortAgency}</span>
+            </div>
+          `;
+        });
+        if (dayLectures.length > 2) {
+          badgesHtml += `<div class="text-[9px] font-bold text-slate-400 text-center">+${dayLectures.length - 2}건</div>`;
+        }
+        badgesHtml += `</div>`;
+
+        cell.innerHTML = headerHtml + badgesHtml;
+        cell.addEventListener('click', () => {
+          state.selectedDate = dateStr;
+          renderCalendar();
+          renderSelectedDateLectures();
+          lucide.createIcons();
+        });
+
+        grid.appendChild(cell);
+      }
+    }
+
+    function renderSelectedDateLectures() {
+      const [y, m, d] = state.selectedDate.split('-').map(Number);
+      const dateObj = new Date(y, m - 1, d);
+      const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+      document.getElementById('selected-date-title').textContent = `${m}월 ${d}일 (${dayNames[dateObj.getDay()]})`;
+
+      const list = state.lectures.filter(l => l.date === state.selectedDate);
+      const totalDayNet = list.reduce((s, l) => s + (parseFloat(l.netAmount) || 0), 0);
+      document.getElementById('selected-date-subtitle').textContent =
+        list.length > 0 ? `총 ${list.length}건 · 실수령 ${formatKRW(totalDayNet)}` : '등록된 강의 일정이 없습니다.';
+
+      const container = document.getElementById('selected-date-lectures');
+      container.innerHTML = '';
+
+      if (list.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-6 bg-slate-50 rounded-2xl border border-dashed border-slate-200 space-y-2.5">
+            <p class="text-xs text-slate-500">이 날짜에 등록된 강의가 없어요.</p>
+            ${state.lectures.length === 0 ? `
+              <button type="button" id="load-sample-btn" class="text-xs font-bold text-indigoSoft-600 bg-indigoSoft-50 px-3 py-1.5 rounded-xl hover:bg-indigoSoft-100 transition">
+                ✨ 예시 데이터로 둘러보기
+              </button>
+            ` : ''}
+          </div>
+        `;
+        const sampleBtn = document.getElementById('load-sample-btn');
+        if (sampleBtn) sampleBtn.addEventListener('click', seedSampleData);
+        return;
+      }
+
+      list.forEach(lec => {
+        container.appendChild(createLectureCardElement(lec));
+      });
+    }
+
+    function createLectureCardElement(lec, showDate = false) {
+      const c = COLOR_MAP[lec.color] || COLOR_MAP.pink;
+      const isPaid = lec.status === 'paid';
+
+      const card = document.createElement('div');
+      card.className = 'bg-slate-50/80 hover:bg-white border border-slate-200/80 rounded-2xl p-3.5 transition shadow-2xs space-y-2.5';
+
+      card.innerHTML = `
+        <div class="flex items-start justify-between gap-2">
+          <div class="space-y-1 min-w-0 flex-1 cursor-pointer edit-lecture-trigger">
+            <div class="flex items-center gap-1.5 flex-wrap">
+              ${showDate ? `<span class="text-[11px] font-bold text-slate-500 bg-white px-2 py-0.5 rounded-md border border-slate-200">${lec.date.slice(5).replace('-', '/')}</span>` : ''}
+              <span class="${c.bg} ${c.text} text-[11px] font-extrabold px-2 py-0.5 rounded-lg">
+                ${lec.agency}
+              </span>
+              <span class="text-xs font-bold text-slate-700 bg-white px-2 py-0.5 rounded-lg border border-slate-200">
+                ${lec.sessions}차시
+              </span>
+            </div>
+            ${lec.title ? `<h4 class="text-sm font-bold text-slate-900 truncate pt-0.5">${lec.title}</h4>` : ''}
+            ${lec.memo ? `<p class="text-[11px] text-slate-500 truncate">📝 ${lec.memo}</p>` : ''}
+          </div>
+
+          <div class="text-right shrink-0">
+            <div class="text-sm font-extrabold text-slate-900">${formatKRW(lec.netAmount)}</div>
+            <div class="text-[10px] text-slate-400">
+              세전 ${formatKRW(lec.grossAmount)} (${lec.taxType === '0' ? '비과세' : lec.taxType + '%'})
+            </div>
+          </div>
+        </div>
+
+        <div class="pt-2 border-t border-slate-200/60 flex items-center justify-between">
+          <div class="text-[11px] text-slate-400">
+            ${lec.payoutDate ? `정산예정일: ${lec.payoutDate}` : `단가 ${formatKRW(lec.rate)} × ${lec.sessions}`}
+          </div>
+          <div class="flex items-center gap-1.5">
+            <button type="button" class="edit-lecture-btn px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-white border border-slate-200 text-slate-600 hover:bg-slate-100">
+              수정
+            </button>
+            <button type="button" class="toggle-status-btn px-2.5 py-1 rounded-lg text-[11px] font-bold transition flex items-center gap-1 ${
+              isPaid
+                ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
+                : 'bg-amber-100 text-amber-800 hover:bg-amber-200'
+            }">
+              <span>${isPaid ? '✅ 입금완료' : '⏳ 정산예정'}</span>
+            </button>
+          </div>
+        </div>
+      `;
+
+      card.querySelector('.edit-lecture-trigger').addEventListener('click', () => openLectureModal(lec));
+      card.querySelector('.edit-lecture-btn').addEventListener('click', () => openLectureModal(lec));
+      card.querySelector('.toggle-status-btn').addEventListener('click', () => toggleSettlementStatus(lec.id));
+
+      return card;
+    }
+
+    function renderSettlementTab() {
+      const monthLectures = getMonthLectures();
+
+      // 업체 필터 드롭다운 갱신
+      const agencySelect = document.getElementById('agency-filter-select');
+      const uniqueAgencies = [...new Set(monthLectures.map(l => l.agency))];
+      const currentVal = state.filterAgency;
+      agencySelect.innerHTML = `<option value="all">🏢 모든 출강 업체 보기 (${uniqueAgencies.length}곳)</option>`;
+      uniqueAgencies.forEach(ag => {
+        const opt = document.createElement('option');
+        opt.value = ag;
+        opt.textContent = ag;
+        if (ag === currentVal) opt.selected = true;
+        agencySelect.appendChild(opt);
+      });
+
+      // 업체별 이번 달 소계 카드
+      const breakdownList = document.getElementById('agency-breakdown-list');
+      breakdownList.innerHTML = '';
+      if (uniqueAgencies.length === 0) {
+        breakdownList.innerHTML = `<div class="text-xs text-slate-400 py-2 px-1">이번 달 출강 내역이 없습니다.</div>`;
+      } else {
+        uniqueAgencies.forEach(ag => {
+          const agLecs = monthLectures.filter(l => l.agency === ag);
+          const agSessions = agLecs.reduce((s, l) => s + (parseFloat(l.sessions) || 0), 0);
+          const agNet = agLecs.reduce((s, l) => s + (parseFloat(l.netAmount) || 0), 0);
+          const unpaidCount = agLecs.filter(l => l.status !== 'paid').length;
+          const colorKey = agLecs[0]?.color || 'pink';
+          const c = COLOR_MAP[colorKey] || COLOR_MAP.pink;
+
+          const card = document.createElement('div');
+          card.className = 'bg-white border border-slate-200/80 rounded-2xl p-3 min-w-[145px] shrink-0 shadow-2xs space-y-1';
+          card.innerHTML = `
+            <div class="flex items-center justify-between">
+              <span class="w-2.5 h-2.5 rounded-full ${c.dot}"></span>
+              <span class="text-[10px] font-bold ${unpaidCount > 0 ? 'text-amber-600' : 'text-emerald-600'}">
+                ${unpaidCount > 0 ? `미정산 ${unpaidCount}건` : '모두 완료'}
+              </span>
+            </div>
+            <div class="text-xs font-extrabold text-slate-800 truncate">${ag}</div>
+            <div class="text-sm font-extrabold text-brand-600">${formatKRW(agNet)}</div>
+            <div class="text-[10px] text-slate-400">총 ${agLecs.length}회 · ${agSessions}차시</div>
+          `;
+          breakdownList.appendChild(card);
+        });
+      }
+
+      // 필터링 적용된 리스트
+      const filtered = monthLectures.filter(l => {
+        if (state.filterStatus !== 'all' && l.status !== state.filterStatus) return false;
+        if (state.filterAgency !== 'all' && l.agency !== state.filterAgency) return false;
+        return true;
+      });
+
+      const listContainer = document.getElementById('settlement-list-container');
+      listContainer.innerHTML = '';
+
+      if (filtered.length === 0) {
+        listContainer.innerHTML = `
+          <div class="bg-white rounded-3xl p-8 text-center border border-slate-100 space-y-2">
+            <p class="text-sm font-bold text-slate-600">조건에 맞는 정산 내역이 없습니다.</p>
+            <p class="text-xs text-slate-400">상단 필터를 변경하거나 새 강의를 등록해 보세요.</p>
+          </div>
+        `;
+        return;
+      }
+
+      filtered.forEach(lec => {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'bg-white rounded-3xl p-1 shadow-2xs border border-slate-100';
+        wrapper.appendChild(createLectureCardElement(lec, true));
+        listContainer.appendChild(wrapper);
+      });
+    }
+
+    function renderAgenciesTab() {
+      const container = document.getElementById('agencies-list-container');
+      container.innerHTML = '';
+
+      if (state.agencies.length === 0) {
+        container.innerHTML = `
+          <div class="bg-white rounded-3xl p-8 text-center border border-dashed border-slate-200 space-y-3">
+            <div class="w-12 h-12 rounded-2xl bg-indigoSoft-50 text-indigoSoft-600 flex items-center justify-center mx-auto">
+              <i data-lucide="building-2" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <p class="text-sm font-bold text-slate-700">저장된 출강 업체가 없습니다</p>
+              <p class="text-xs text-slate-400 mt-1">자주 출강하는 학원, 학교, 기관의 차시당 단가를 등록해 두면<br/>강의 등록 시 터치 한 번으로 자동 입력됩니다.</p>
+            </div>
+            <button type="button" id="empty-add-agency-btn" class="text-xs font-bold bg-indigoSoft-600 text-white px-4 py-2.5 rounded-xl shadow-sm">
+              + 첫 번째 업체 등록하기
+            </button>
+          </div>
+        `;
+        document.getElementById('empty-add-agency-btn')?.addEventListener('click', () => openAgencyModal());
+        return;
+      }
+
+      state.agencies.forEach(ag => {
+        const c = COLOR_MAP[ag.color] || COLOR_MAP.pink;
+        const card = document.createElement('div');
+        card.className = 'bg-white rounded-2xl p-4 border border-slate-100 shadow-2xs flex items-center justify-between gap-3';
+        card.innerHTML = `
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="w-10 h-10 rounded-2xl ${c.bg} ${c.text} flex items-center justify-center font-extrabold text-sm shrink-0">
+              ${ag.name.slice(0, 2)}
+            </div>
+            <div class="min-w-0">
+              <h4 class="text-sm font-extrabold text-slate-900 truncate">${ag.name}</h4>
+              <p class="text-xs text-slate-500 mt-0.5">
+                기본 ${ag.defaultSessions}차시 · 차시당 <strong class="text-slate-700">${formatKRW(ag.defaultRate)}</strong> · ${ag.taxType === '0' ? '세전' : ag.taxType + '% 공제'}
+              </p>
+            </div>
+          </div>
+          <button type="button" class="edit-agency-btn p-2 rounded-xl bg-slate-50 text-slate-500 hover:bg-slate-100 shrink-0">
+            <i data-lucide="pencil" class="w-4 h-4"></i>
+          </button>
+        `;
+        card.querySelector('.edit-agency-btn').addEventListener('click', () => openAgencyModal(ag));
+        container.appendChild(card);
+      });
+    }
+
+    // ================= 7. 모달 제어 및 자동 계산 로직 =================
+    function updateLecturePriceCalculation() {
+      const sessions = parseFloat(document.getElementById('lecture-sessions').value) || 0;
+      const rate = parseFloat(document.getElementById('lecture-rate').value) || 0;
+      const grossInput = document.getElementById('lecture-gross-amount');
+
+      if (!state.isGrossManuallyEdited) {
+        grossInput.value = Math.round(sessions * rate);
+      }
+
+      const gross = parseFloat(grossInput.value) || 0;
+      const taxType = document.querySelector('input[name="taxType"]:checked')?.value || '3.3';
+      const net = calculateNetAmount(gross, taxType);
+      document.getElementById('calc-net-preview').textContent = formatKRW(net);
+    }
+
+    function openLectureModal(lecture = null) {
+      const modal = document.getElementById('lecture-modal');
+      const form = document.getElementById('lecture-form');
+      form.reset();
+      state.isGrossManuallyEdited = false;
+
+      // 업체 프리셋 칩 렌더링
+      const chipsList = document.getElementById('preset-chips-list');
+      chipsList.innerHTML = '';
+      if (state.agencies.length === 0) {
+        chipsList.innerHTML = `<span class="text-[11px] text-slate-400 py-1">등록된 업체 프리셋이 없습니다.</span>`;
+      } else {
+        state.agencies.forEach(ag => {
+          const c = COLOR_MAP[ag.color] || COLOR_MAP.pink;
+          const chip = document.createElement('button');
+          chip.type = 'button';
+          chip.className = `${c.bg} ${c.text} border ${c.border} px-3 py-1.5 rounded-xl text-xs font-bold shrink-0 hover:opacity-90 active:scale-95 transition`;
+          chip.textContent = `${ag.name} (${ag.defaultSessions}차시)`;
+          chip.addEventListener('click', () => {
+            document.getElementById('lecture-agency').value = ag.name;
+            document.getElementById('lecture-sessions').value = ag.defaultSessions;
+            document.getElementById('lecture-rate').value = ag.defaultRate;
+            state.isGrossManuallyEdited = false;
+
+            const taxRadio = document.querySelector(`input[name="taxType"][value="${ag.taxType}"]`);
+            if (taxRadio) taxRadio.checked = true;
+
+            const colorRadio = document.querySelector(`input[name="lectureColor"][value="${ag.color}"]`);
+            if (colorRadio) colorRadio.checked = true;
+
+            updateLecturePriceCalculation();
+            showToast(`'${ag.name}' 단가 정보가 적용되었습니다.`);
+          });
+          chipsList.appendChild(chip);
+        });
+      }
+
+      // 반복 등록 UI 초기화
+      const recurWrapper = document.getElementById('recurring-toggle-wrapper');
+      const recurOptions = document.getElementById('recurring-options');
+      document.getElementById('is-recurring-checkbox').checked = false;
+      recurOptions.classList.add('hidden');
+      state.recurringWeeks = 4;
+      document.getElementById('recurring-weeks-display').textContent = '4주';
+      document.querySelectorAll('.recur-day').forEach(cb => cb.checked = false);
+
+      if (lecture) {
+        // 수정 모드
+        document.getElementById('lecture-modal-title').textContent = '강의 · 정산 수정';
+        document.getElementById('lecture-id').value = lecture.id;
+        document.getElementById('lecture-date').value = lecture.date;
+        document.getElementById('lecture-agency').value = lecture.agency;
+        document.getElementById('lecture-title').value = lecture.title || '';
+        document.getElementById('lecture-sessions').value = lecture.sessions;
+        document.getElementById('lecture-rate').value = lecture.rate;
+        document.getElementById('lecture-gross-amount').value = lecture.grossAmount;
+        state.isGrossManuallyEdited = true;
+
+        const taxRadio = document.querySelector(`input[name="taxType"][value="${lecture.taxType}"]`);
+        if (taxRadio) taxRadio.checked = true;
+
+        const statusRadio = document.querySelector(`input[name="settlementStatus"][value="${lecture.status}"]`);
+        if (statusRadio) statusRadio.checked = true;
+
+        document.getElementById('lecture-payout-date').value = lecture.payoutDate || '';
+
+        const colorRadio = document.querySelector(`input[name="lectureColor"][value="${lecture.color || 'pink'}"]`);
+        if (colorRadio) colorRadio.checked = true;
+
+        document.getElementById('lecture-memo').value = lecture.memo || '';
+        document.getElementById('delete-lecture-btn').classList.remove('hidden');
+        recurWrapper.classList.add('hidden');
+      } else {
+        // 신규 등록 모드
+        document.getElementById('lecture-modal-title').textContent = '강의 · 정산 등록';
+        document.getElementById('lecture-id').value = '';
+        document.getElementById('lecture-date').value = state.selectedDate;
+        document.getElementById('delete-lecture-btn').classList.add('hidden');
+        recurWrapper.classList.remove('hidden');
+      }
+
+      updateLecturePriceCalculation();
+      modal.classList.remove('hidden');
+    }
+
+    function openAgencyModal(agency = null) {
+      const modal = document.getElementById('agency-modal');
+      document.getElementById('agency-form').reset();
+
+      if (agency) {
+        document.getElementById('agency-modal-title').textContent = '업체 프리셋 수정';
+        document.getElementById('agency-id').value = agency.id;
+        document.getElementById('agency-name').value = agency.name;
+        document.getElementById('agency-default-sessions').value = agency.defaultSessions;
+        document.getElementById('agency-default-rate').value = agency.defaultRate;
+
+        const taxRadio = document.querySelector(`input[name="agencyTaxType"][value="${agency.taxType}"]`);
+        if (taxRadio) taxRadio.checked = true;
+
+        const colorRadio = document.querySelector(`input[name="agencyColor"][value="${agency.color || 'pink'}"]`);
+        if (colorRadio) colorRadio.checked = true;
+
+        document.getElementById('delete-agency-btn').classList.remove('hidden');
+      } else {
+        document.getElementById('agency-modal-title').textContent = '출강 업체 프리셋 추가';
+        document.getElementById('agency-id').value = '';
+        document.getElementById('delete-agency-btn').classList.add('hidden');
+      }
+
+      modal.classList.remove('hidden');
+    }
+
+    // 반복 일정 날짜 목록 생성기
+    function generateRecurringDates(startDateStr, weeks, selectedWeekdays) {
+      const [y, m, d] = startDateStr.split('-').map(Number);
+      const startObj = new Date(y, m - 1, d);
+      const dates = new Set();
+
+      if (selectedWeekdays.length === 0) {
+        // 요일 별도 체크 안 했으면 시작일 요일 기준으로 매주 반복
+        for (let w = 0; w < weeks; w++) {
+          const nextDate = new Date(y, m - 1, d + w * 7);
+          dates.add(formatDateStr(nextDate));
+        }
+      } else {
+        // 시작일이 속한 주의 일요일부터 weeks주 동안 선택된 요일 추출
+        const startSunday = new Date(y, m - 1, d - startObj.getDay());
+        for (let w = 0; w < weeks; w++) {
+          selectedWeekdays.forEach(wd => {
+            const candidate = new Date(startSunday.getFullYear(), startSunday.getMonth(), startSunday.getDate() + w * 7 + wd);
+            if (candidate >= startObj) {
+              dates.add(formatDateStr(candidate));
+            }
+          });
+        }
+      }
+      return Array.from(dates).sort();
+    }
+
+    function updateRecurringPreview() {
+      const startDate = document.getElementById('lecture-date').value;
+      if (!startDate) return;
+      const selectedDays = Array.from(document.querySelectorAll('.recur-day:checked')).map(cb => Number(cb.value));
+      const dates = generateRecurringDates(startDate, state.recurringWeeks, selectedDays);
+      document.getElementById('recurring-preview-text').textContent = `총 ${dates.length}건의 강의 일정이 한 번에 등록됩니다.`;
+    }
+
+    // ================= 8. 캘린더(.ics) 및 엑셀(CSV) 내보내기 =================
+    function exportMonthToICS() {
+      const monthLectures = getMonthLectures();
+      if (monthLectures.length === 0) {
+        showToast('이번 달에 내보낼 강의 일정이 없습니다.', 'error');
+        return;
+      }
+
+      let icsContent = [
+        'BEGIN:VCALENDAR',
+        'VERSION:2.0',
+        'PRODID:-//Instructor Ledger//KR',
+        'CALSCALE:GREGORIAN',
+        'METHOD:PUBLISH'
+      ];
+
+      monthLectures.forEach(lec => {
+        const dateClean = lec.date.replace(/-/g, '');
+        const summary = `[강의] ${lec.agency} (${lec.sessions}차시)`;
+        const desc = `과정명: ${lec.title || '-'}\\n차시: ${lec.sessions}차시\\n예상 실수령액: ${formatKRW(lec.netAmount)}\\n상태: ${lec.status === 'paid' ? '입금완료' : '정산예정'}\\n메모: ${lec.memo || '-'}`;
+
+        icsContent.push(
+          'BEGIN:VEVENT',
+          `UID:${lec.id}@instructor-ledger.app`,
+          `DTSTAMP:${dateClean}T090000Z`,
+          `DTSTART;VALUE=DATE:${dateClean}`,
+          `DTEND;VALUE=DATE:${dateClean}`,
+          `SUMMARY:${summary}`,
+          `DESCRIPTION:${desc}`,
+          'END:VEVENT'
+        );
+      });
+
+      icsContent.push('END:VCALENDAR');
+
+      const blob = new Blob([icsContent.join('\r\n')], { type: 'text/calendar;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `강사일정_${state.currentYear}년_${state.currentMonth + 1}월.ics`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      showToast('캘린더 파일(.ics)이 다운로드되었습니다!');
+    }
+
+    function exportMonthToCSV() {
+      const monthLectures = getMonthLectures();
+      if (monthLectures.length === 0) {
+        showToast('이번 달에 다운로드할 정산 내역이 없습니다.', 'error');
+        return;
+      }
+
+      const headers = ['출강일자', '출강업체', '강의명', '차시', '차시당단가', '세전강사료', '세금공제율(%)', '예상실수령액', '정산상태', '정산예정일', '메모'];
+      const rows = monthLectures.map(l => [
+        l.date,
+        `"${(l.agency || '').replace(/"/g, '""')}"`,
+        `"${(l.title || '').replace(/"/g, '""')}"`,
+        l.sessions,
+        l.rate,
+        l.grossAmount,
+        l.taxType,
+        l.netAmount,
+        l.status === 'paid' ? '입금완료' : '정산예정',
+        l.payoutDate || '',
+        `"${(l.memo || '').replace(/"/g, '""')}"`
+      ]);
+
+      // 한글 깨짐 방지 BOM 추가
+      const csvString = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+      const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `강사정산내역_${state.currentYear}년_${state.currentMonth + 1}월.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      showToast('엑셀(CSV) 파일이 다운로드되었습니다!');
+    }
+
+    // ================= 9. 이벤트 리스너 바인딩 =================
+    function bindEvents() {
+      // 하단 탭 전환
+      document.querySelectorAll('.nav-tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const targetTab = btn.dataset.tab;
+          state.activeTab = targetTab;
+
+          document.querySelectorAll('.nav-tab-btn').forEach(b => {
+            b.classList.remove('active', 'text-brand-600', 'font-bold');
+            b.classList.add('text-slate-400', 'font-medium');
+          });
+          btn.classList.add('active', 'text-brand-600', 'font-bold');
+          btn.classList.remove('text-slate-400', 'font-medium');
+
+          document.getElementById('tab-calendar').classList.toggle('hidden', targetTab !== 'calendar');
+          document.getElementById('tab-settlement').classList.toggle('hidden', targetTab !== 'settlement');
+          document.getElementById('tab-agencies').classList.toggle('hidden', targetTab !== 'agencies');
+        });
+      });
+
+      // 월 이동 버튼
+      document.getElementById('prev-month-btn').addEventListener('click', () => {
+        if (state.currentMonth === 0) {
+          state.currentYear--;
+          state.currentMonth = 11;
+        } else {
+          state.currentMonth--;
+        }
+        renderAll();
+      });
+
+      document.getElementById('next-month-btn').addEventListener('click', () => {
+        if (state.currentMonth === 11) {
+          state.currentYear++;
+          state.currentMonth = 0;
+        } else {
+          state.currentMonth++;
+        }
+        renderAll();
+      });
+
+      // 오늘로 이동
+      document.getElementById('go-today-btn').addEventListener('click', () => {
+        const now = new Date();
+        state.currentYear = now.getFullYear();
+        state.currentMonth = now.getMonth();
+        state.selectedDate = formatDateStr(now);
+        renderAll();
+        showToast('오늘 날짜로 이동했습니다.');
+      });
+
+      // 모달 열기 버튼들
+      document.getElementById('add-lecture-selected-date-btn').addEventListener('click', () => openLectureModal());
+      document.getElementById('fab-add-lecture').addEventListener('click', () => openLectureModal());
+      document.getElementById('close-lecture-modal').addEventListener('click', () => document.getElementById('lecture-modal').classList.add('hidden'));
+
+      document.getElementById('open-add-agency-btn').addEventListener('click', () => openAgencyModal());
+      document.getElementById('close-agency-modal').addEventListener('click', () => document.getElementById('agency-modal').classList.add('hidden'));
+
+      document.getElementById('quick-go-agencies').addEventListener('click', () => {
+        document.getElementById('lecture-modal').classList.add('hidden');
+        document.querySelector('.nav-tab-btn[data-tab="agencies"]').click();
+      });
+
+      // 차시 +/- 버튼 및 가격 자동 계산
+      document.getElementById('dec-sessions-btn').addEventListener('click', () => {
+        const input = document.getElementById('lecture-sessions');
+        const val = Math.max(0.5, (parseFloat(input.value) || 1) - 1);
+        input.value = val;
+        state.isGrossManuallyEdited = false;
+        updateLecturePriceCalculation();
+      });
+
+      document.getElementById('inc-sessions-btn').addEventListener('click', () => {
+        const input = document.getElementById('lecture-sessions');
+        const val = (parseFloat(input.value) || 0) + 1;
+        input.value = val;
+        state.isGrossManuallyEdited = false;
+        updateLecturePriceCalculation();
+      });
+
+      document.getElementById('lecture-sessions').addEventListener('input', () => {
+        state.isGrossManuallyEdited = false;
+        updateLecturePriceCalculation();
+      });
+
+      document.getElementById('lecture-rate').addEventListener('input', () => {
+        state.isGrossManuallyEdited = false;
+        updateLecturePriceCalculation();
+      });
+
+      document.getElementById('lecture-gross-amount').addEventListener('input', () => {
+        state.isGrossManuallyEdited = true;
+        updateLecturePriceCalculation();
+      });
+
+      document.querySelectorAll('input[name="taxType"]').forEach(radio => {
+        radio.addEventListener('change', updateLecturePriceCalculation);
+      });
+
+      // 반복 일정 옵션 토글 및 제어
+      document.getElementById('is-recurring-checkbox').addEventListener('change', (e) => {
+        document.getElementById('recurring-options').classList.toggle('hidden', !e.target.checked);
+        updateRecurringPreview();
+      });
+
+      document.getElementById('dec-weeks-btn').addEventListener('click', () => {
+        if (state.recurringWeeks > 2) {
+          state.recurringWeeks--;
+          document.getElementById('recurring-weeks-display').textContent = `${state.recurringWeeks}주`;
+          updateRecurringPreview();
+        }
+      });
+
+      document.getElementById('inc-weeks-btn').addEventListener('click', () => {
+        if (state.recurringWeeks < 24) {
+          state.recurringWeeks++;
+          document.getElementById('recurring-weeks-display').textContent = `${state.recurringWeeks}주`;
+          updateRecurringPreview();
+        }
+      });
+
+      document.getElementById('lecture-date').addEventListener('change', updateRecurringPreview);
+      document.querySelectorAll('.recur-day').forEach(cb => cb.addEventListener('change', updateRecurringPreview));
+
+      // 강의 폼 제출
+      document.getElementById('lecture-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const existingId = document.getElementById('lecture-id').value;
+        const startDate = document.getElementById('lecture-date').value;
+        const agency = document.getElementById('lecture-agency').value.trim();
+        const title = document.getElementById('lecture-title').value.trim();
+        const sessions = parseFloat(document.getElementById('lecture-sessions').value) || 0;
+        const rate = parseFloat(document.getElementById('lecture-rate').value) || 0;
+        const grossAmount = parseFloat(document.getElementById('lecture-gross-amount').value) || 0;
+        const taxType = document.querySelector('input[name="taxType"]:checked')?.value || '3.3';
+        const netAmount = calculateNetAmount(grossAmount, taxType);
+        const status = document.querySelector('input[name="settlementStatus"]:checked')?.value || 'unpaid';
+        const payoutDate = document.getElementById('lecture-payout-date').value;
+        const color = document.querySelector('input[name="lectureColor"]:checked')?.value || 'pink';
+        const memo = document.getElementById('lecture-memo').value.trim();
+
+        const isRecurring = !existingId && document.getElementById('is-recurring-checkbox').checked;
+
+        if (isRecurring) {
+          const selectedDays = Array.from(document.querySelectorAll('.recur-day:checked')).map(cb => Number(cb.value));
+          const targetDates = generateRecurringDates(startDate, state.recurringWeeks, selectedDays);
+
+          for (const dStr of targetDates) {
+            await saveLectureData({
+              date: dStr, agency, title, sessions, rate, grossAmount, taxType, netAmount, status, payoutDate, color, memo
+            });
+          }
+          showToast(`총 ${targetDates.length}건의 반복 강의가 등록되었습니다!`);
+        } else {
+          await saveLectureData({
+            date: startDate, agency, title, sessions, rate, grossAmount, taxType, netAmount, status, payoutDate, color, memo
+          }, existingId || null);
+          showToast(existingId ? '강의 내역이 수정되었습니다.' : '새 강의가 등록되었습니다!');
+        }
+
+        state.selectedDate = startDate;
+        document.getElementById('lecture-modal').classList.add('hidden');
+      });
+
+      // 강의 삭제
+      document.getElementById('delete-lecture-btn').addEventListener('click', async () => {
+        const id = document.getElementById('lecture-id').value;
+        if (!id) return;
+        const ok = await showConfirm('강의 일정 삭제', '이 강의 및 정산 기록을 삭제하시겠습니까?');
+        if (ok) {
+          await deleteLectureById(id);
+          document.getElementById('lecture-modal').classList.add('hidden');
+        }
+      });
+
+      // 업체 프리셋 폼 제출
+      document.getElementById('agency-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const existingId = document.getElementById('agency-id').value;
+        const name = document.getElementById('agency-name').value.trim();
+        const defaultSessions = parseFloat(document.getElementById('agency-default-sessions').value) || 2;
+        const defaultRate = parseFloat(document.getElementById('agency-default-rate').value) || 0;
+        const taxType = document.querySelector('input[name="agencyTaxType"]:checked')?.value || '3.3';
+        const color = document.querySelector('input[name="agencyColor"]:checked')?.value || 'pink';
+
+        await saveAgencyData({ name, defaultSessions, defaultRate, taxType, color }, existingId || null);
+        document.getElementById('agency-modal').classList.add('hidden');
+        showToast(existingId ? '업체 프리셋이 수정되었습니다.' : '새 업체 프리셋이 저장되었습니다!');
+      });
+
+      // 업체 프리셋 삭제
+      document.getElementById('delete-agency-btn').addEventListener('click', async () => {
+        const id = document.getElementById('agency-id').value;
+        if (!id) return;
+        const ok = await showConfirm('업체 프리셋 삭제', '이 업체 프리셋을 삭제하시겠습니까? (기존 강의 기록은 유지됩니다)');
+        if (ok) {
+          await deleteAgencyById(id);
+          document.getElementById('agency-modal').classList.add('hidden');
+        }
+      });
+
+      // 정산 탭 필터 이벤트
+      document.querySelectorAll('.status-filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          state.filterStatus = btn.dataset.statusFilter;
+          document.querySelectorAll('.status-filter-btn').forEach(b => {
+            b.classList.remove('active', 'bg-slate-800', 'text-white', 'font-bold');
+            b.classList.add('bg-slate-100', 'text-slate-600', 'font-semibold');
+          });
+          btn.classList.add('active', 'bg-slate-800', 'text-white', 'font-bold');
+          btn.classList.remove('bg-slate-100', 'text-slate-600', 'font-semibold');
+          renderSettlementTab();
+        });
+      });
+
+      document.getElementById('agency-filter-select').addEventListener('change', (e) => {
+        state.filterAgency = e.target.value;
+        renderSettlementTab();
+      });
+
+      // 내보내기 버튼들
+      document.getElementById('export-ics-btn').addEventListener('click', exportMonthToICS);
+      document.getElementById('export-csv-btn').addEventListener('click', exportMonthToCSV);
+    }
+
+    // ================= 10. 앱 시작 =================
+    window.addEventListener('DOMContentLoaded', () => {
+      bindEvents();
+      renderAll();
+      initFirebaseSync();
+    });
+  </script>
+</body>
+</html>
