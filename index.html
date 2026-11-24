@@ -217,7 +217,6 @@
             </button>
           </div>
 
-          <!-- 정산 기간(전체 / 월 선택) -->
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <select id="settlement-period-select" class="w-full bg-brand-50/70 border border-brand-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-400">
               <option value="all">📅 전체 기간 보기</option>
@@ -263,7 +262,6 @@
         </div>
 
         <div class="bg-white rounded-3xl p-3.5 shadow-sm border border-slate-100 space-y-2.5">
-          <!-- 지출 기간(전체 / 월 선택) -->
           <select id="expense-period-select" class="w-full bg-rose-50/60 border border-rose-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-400">
             <option value="all">📅 전체 기간 보기</option>
           </select>
@@ -280,7 +278,7 @@
         <div id="expenses-list-container" class="space-y-2.5"></div>
       </div>
 
-      <!-- TAB 4: 업체관리 -->
+      <!-- TAB 4: 업체관리 및 데이터 백업/복원 -->
       <div id="tab-agencies" class="hidden space-y-4">
         <div class="bg-white rounded-3xl p-4 shadow-sm border border-slate-100 flex items-center justify-between">
           <div>
@@ -295,14 +293,36 @@
 
         <div id="agencies-list-container" class="space-y-2.5"></div>
 
-        <div class="bg-indigoSoft-50/70 border border-indigoSoft-100 rounded-3xl p-4 space-y-2">
-          <div class="flex items-center gap-2 text-indigoSoft-600 font-bold text-xs">
-            <i data-lucide="hard-drive" class="w-4 h-4"></i>
-            <span>브라우저 영구 저장 안내</span>
+        <!-- 데이터 백업 및 복원 섹션 -->
+        <div class="bg-white rounded-3xl p-4 shadow-sm border border-slate-100 space-y-3">
+          <div class="flex items-start justify-between gap-2">
+            <div>
+              <h3 class="text-sm font-extrabold text-slate-900 flex items-center gap-1.5">
+                <i data-lucide="shield-check" class="w-4 h-4 text-emerald-600"></i>
+                데이터 백업 & 복원 (.json)
+              </h3>
+              <p class="text-xs text-slate-500 mt-1 leading-relaxed">
+                브라우저 캐시 삭제나 휴대폰 교체에 대비해 강의·정산·지출·업체 데이터를 파일로 보관하고 언제든 복원할 수 있습니다.
+              </p>
+            </div>
           </div>
-          <p class="text-xs text-slate-600 leading-relaxed">
-            강의 일정, 업체 프리셋, 지출 내역은 각 기기 브라우저(localStorage)에 자동 저장되어 껐다 켜도 유지됩니다.
-          </p>
+
+          <div class="grid grid-cols-2 gap-2.5 pt-1">
+            <button type="button" id="backup-json-btn" class="bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold py-3 px-3 rounded-2xl flex items-center justify-center gap-1.5 active:scale-95 transition shadow-sm">
+              <i data-lucide="download" class="w-4 h-4 text-emerald-400"></i>
+              <span>백업 파일 저장</span>
+            </button>
+            <button type="button" id="restore-json-btn" class="bg-indigoSoft-50 hover:bg-indigoSoft-100 text-indigoSoft-600 border border-indigoSoft-100 text-xs font-bold py-3 px-3 rounded-2xl flex items-center justify-center gap-1.5 active:scale-95 transition">
+              <i data-lucide="upload" class="w-4 h-4"></i>
+              <span>백업 파일 복원</span>
+            </button>
+            <input type="file" id="restore-json-input" accept=".json,application/json" class="hidden" />
+          </div>
+
+          <div id="backup-stats-text" class="text-[11px] text-slate-400 bg-slate-50 rounded-xl px-3 py-2 flex items-center justify-between">
+            <span>현재 저장된 데이터</span>
+            <span id="backup-counts-label" class="font-semibold text-slate-600">강의 0건 · 지출 0건 · 업체 0곳</span>
+          </div>
         </div>
       </div>
 
@@ -328,7 +348,7 @@
         </button>
         <button data-tab="agencies" class="nav-tab-btn flex flex-col items-center justify-center py-1.5 rounded-2xl text-slate-400 hover:text-slate-600 font-medium transition">
           <i data-lucide="building-2" class="w-5 h-5 mb-0.5"></i>
-          <span class="text-[11px]">업체관리</span>
+          <span class="text-[11px]">업체·백업</span>
         </button>
       </div>
     </nav>
@@ -668,6 +688,31 @@
     </div>
   </div>
 
+  <!-- 모달 4: 백업 파일 복원 방식 선택 -->
+  <div id="restore-modal" class="fixed inset-0 z-50 hidden bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-5 shadow-2xl space-y-4">
+      <div class="space-y-1">
+        <h3 class="text-base font-extrabold text-slate-900">백업 파일 복원 방식 선택</h3>
+        <p id="restore-file-summary" class="text-xs text-slate-600 leading-relaxed">
+          백업 파일 내역을 어떻게 적용할까요?
+        </p>
+      </div>
+      <div class="space-y-2">
+        <button id="restore-merge-btn" class="w-full py-3 px-4 rounded-2xl bg-indigoSoft-600 text-white font-bold text-xs text-left hover:bg-indigoSoft-500 transition">
+          <div>➕ 기존 내역에 이어 붙이기 (병합)</div>
+          <div class="text-[10px] font-normal text-indigo-100 mt-0.5">현재 기기 데이터는 유지하고 백업 파일의 새 항목만 추가합니다.</div>
+        </button>
+        <button id="restore-overwrite-btn" class="w-full py-3 px-4 rounded-2xl bg-rose-50 text-rose-700 border border-rose-200 font-bold text-xs text-left hover:bg-rose-100 transition">
+          <div>🔄 백업 파일로 전체 덮어쓰기</div>
+          <div class="text-[10px] font-normal text-rose-500 mt-0.5">현재 기기 데이터를 지우고 백업 파일 내용으로 교체합니다.</div>
+        </button>
+        <button id="restore-cancel-btn" class="w-full py-2.5 rounded-xl bg-slate-100 text-slate-600 font-bold text-xs hover:bg-slate-200">
+          취소
+        </button>
+      </div>
+    </div>
+  </div>
+
   <div id="confirm-modal" class="fixed inset-0 z-50 hidden bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
     <div class="bg-white rounded-3xl max-w-xs w-full p-5 shadow-2xl space-y-4">
       <h3 id="confirm-title" class="text-base font-extrabold text-slate-900">삭제 확인</h3>
@@ -706,13 +751,14 @@
       lectures: [],
       agencies: [],
       expenses: [],
-      settlementPeriod: getCurrentMonthPrefix(), // 'all' 또는 'YYYY-MM'
-      expensePeriod: getCurrentMonthPrefix(),    // 'all' 또는 'YYYY-MM'
+      settlementPeriod: getCurrentMonthPrefix(),
+      expensePeriod: getCurrentMonthPrefix(),
       filterStatus: 'all',
       filterAgency: 'all',
       filterExpenseCategory: 'all',
       isGrossManuallyEdited: false,
-      recurringWeeks: 4
+      recurringWeeks: 4,
+      pendingRestorePayload: null
     };
 
     const COLOR_MAP = {
@@ -786,15 +832,19 @@
         state.lectures = rawLectures ? JSON.parse(rawLectures) : [];
         state.agencies = rawAgencies ? JSON.parse(rawAgencies) : [];
         state.expenses = rawExpenses ? JSON.parse(rawExpenses) : [];
-        state.lectures.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
-        state.agencies.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-        state.expenses.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+        sortAllCollections();
       } catch (e) {
         console.error('LocalStorage load failed:', e);
         state.lectures = [];
         state.agencies = [];
         state.expenses = [];
       }
+    }
+
+    function sortAllCollections() {
+      state.lectures.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+      state.agencies.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+      state.expenses.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
     }
 
     function saveLectureData(lectureObj, existingId = null) {
@@ -804,7 +854,7 @@
       } else {
         state.lectures.push({ id: 'lec-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6), ...lectureObj });
       }
-      state.lectures.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+      sortAllCollections();
       persistToLocalStorage();
       renderAll();
     }
@@ -831,7 +881,7 @@
       } else {
         state.expenses.push({ id: 'exp-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6), ...expenseObj });
       }
-      state.expenses.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+      sortAllCollections();
       persistToLocalStorage();
       renderAll();
     }
@@ -850,7 +900,7 @@
       } else {
         state.agencies.push({ id: 'ag-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6), ...agencyObj });
       }
-      state.agencies.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+      sortAllCollections();
       persistToLocalStorage();
       renderAll();
     }
@@ -860,6 +910,94 @@
       persistToLocalStorage();
       renderAll();
       showToast('업체 프리셋이 삭제되었습니다.');
+    }
+
+    function exportBackupToJSON() {
+      const payload = {
+        app: 'instructor-ledger',
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        data: {
+          lectures: state.lectures,
+          expenses: state.expenses,
+          agencies: state.agencies
+        }
+      };
+
+      const jsonStr = JSON.stringify(payload, null, 2);
+      const blob = new Blob([jsonStr], { type: 'application/json;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `가계부백업_${formatDateStr(new Date())}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      showToast('백업 파일(.json)이 휴대폰에 저장되었습니다!');
+    }
+
+    function handleBackupFileSelected(file) {
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const parsed = JSON.parse(e.target.result);
+          const source = parsed.data ? parsed.data : parsed;
+          const lectures = Array.isArray(source.lectures) ? source.lectures : [];
+          const expenses = Array.isArray(source.expenses) ? source.expenses : [];
+          const agencies = Array.isArray(source.agencies) ? source.agencies : [];
+
+          if (lectures.length === 0 && expenses.length === 0 && agencies.length === 0) {
+            showToast('백업 파일 안에 복원할 내역이 없습니다.', 'error');
+            return;
+          }
+
+          state.pendingRestorePayload = { lectures, expenses, agencies };
+          document.getElementById('restore-file-summary').textContent =
+            `백업 파일 내역: 강의 ${lectures.length}건 · 지출 ${expenses.length}건 · 업체 ${agencies.length}곳`;
+          document.getElementById('restore-modal').classList.remove('hidden');
+        } catch (err) {
+          console.error('JSON parse error:', err);
+          showToast('올바른 백업(.json) 파일이 아닙니다.', 'error');
+        }
+      };
+      reader.readAsText(file, 'utf-8');
+    }
+
+    function applyRestorePayload(mode) {
+      const payload = state.pendingRestorePayload;
+      if (!payload) return;
+
+      if (mode === 'overwrite') {
+        state.lectures = payload.lectures;
+        state.expenses = payload.expenses;
+        state.agencies = payload.agencies;
+      } else {
+        const mergeById = (existing, incoming, prefix) => {
+          const map = new Map();
+          existing.forEach(item => {
+            const key = item.id || `${prefix}-${Math.random()}`;
+            map.set(key, { ...item, id: key });
+          });
+          incoming.forEach(item => {
+            const key = item.id || `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+            map.set(key, { ...item, id: key });
+          });
+          return Array.from(map.values());
+        };
+
+        state.lectures = mergeById(state.lectures, payload.lectures, 'lec');
+        state.expenses = mergeById(state.expenses, payload.expenses, 'exp');
+        state.agencies = mergeById(state.agencies, payload.agencies, 'ag');
+      }
+
+      sortAllCollections();
+      persistToLocalStorage();
+      state.pendingRestorePayload = null;
+      document.getElementById('restore-modal').classList.add('hidden');
+      renderAll();
+      showToast(mode === 'overwrite' ? '백업 파일로 전체 복원되었습니다!' : '백업 내역이 기존 데이터에 병합되었습니다!');
     }
 
     function getHeaderMonthPrefix() {
@@ -1255,6 +1393,9 @@
     }
 
     function renderAgenciesTab() {
+      document.getElementById('backup-counts-label').textContent =
+        `강의 ${state.lectures.length}건 · 지출 ${state.expenses.length}건 · 업체 ${state.agencies.length}곳`;
+
       const container = document.getElementById('agencies-list-container');
       container.innerHTML = '';
 
@@ -1851,6 +1992,24 @@
         state.filterAgency = e.target.value;
         renderSettlementTab();
         if (window.lucide) lucide.createIcons();
+      });
+
+      document.getElementById('backup-json-btn').addEventListener('click', exportBackupToJSON);
+      document.getElementById('restore-json-btn').addEventListener('click', () => {
+        const input = document.getElementById('restore-json-input');
+        input.value = '';
+        input.click();
+      });
+      document.getElementById('restore-json-input').addEventListener('change', (e) => {
+        const file = e.target.files?.[0];
+        if (file) handleBackupFileSelected(file);
+      });
+
+      document.getElementById('restore-merge-btn').addEventListener('click', () => applyRestorePayload('merge'));
+      document.getElementById('restore-overwrite-btn').addEventListener('click', () => applyRestorePayload('overwrite'));
+      document.getElementById('restore-cancel-btn').addEventListener('click', () => {
+        state.pendingRestorePayload = null;
+        document.getElementById('restore-modal').classList.add('hidden');
       });
 
       document.getElementById('export-ics-btn').addEventListener('click', exportMonthToICS);
