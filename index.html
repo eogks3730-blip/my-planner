@@ -109,7 +109,7 @@
 
         <div class="flex items-center justify-between mb-3 relative z-10">
           <span class="text-xs font-medium text-slate-300 bg-white/10 px-2.5 py-1 rounded-full" id="summary-month-badge">
-            11월 정산 요약
+            11월 정산·지출 요약
           </span>
           <div class="flex items-center gap-1.5 text-xs text-slate-300">
             <i data-lucide="clock" class="w-3.5 h-3.5 text-brand-300"></i>
@@ -206,15 +206,26 @@
       <!-- TAB 2: 정산내역 -->
       <div id="tab-settlement" class="hidden space-y-4">
         <div class="bg-white rounded-3xl p-4 shadow-sm border border-slate-100 space-y-3">
-          <div class="flex items-center justify-between">
+          <div class="flex items-center justify-between gap-2">
             <h3 class="text-sm font-bold text-slate-800 flex items-center gap-1.5">
               <i data-lucide="filter" class="w-4 h-4 text-brand-500"></i>
               정산 내역 필터
             </h3>
-            <button id="export-csv-btn" class="text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-xl hover:bg-emerald-100 active:scale-95 transition flex items-center gap-1.5">
+            <button id="export-csv-btn" class="text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-xl hover:bg-emerald-100 active:scale-95 transition flex items-center gap-1.5 shrink-0">
               <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i>
               엑셀(CSV) 다운로드
             </button>
+          </div>
+
+          <!-- 정산 기간(전체 / 월 선택) -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <select id="settlement-period-select" class="w-full bg-brand-50/70 border border-brand-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-400">
+              <option value="all">📅 전체 기간 보기</option>
+            </select>
+
+            <select id="agency-filter-select" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-400">
+              <option value="all">🏢 모든 출강 업체 보기</option>
+            </select>
           </div>
 
           <div class="flex gap-2 overflow-x-auto no-scrollbar pb-1">
@@ -228,16 +239,10 @@
               ✅ 입금 완료만
             </button>
           </div>
-
-          <div>
-            <select id="agency-filter-select" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-400">
-              <option value="all">🏢 모든 출강 업체 보기</option>
-            </select>
-          </div>
         </div>
 
         <div id="agency-breakdown-container" class="space-y-2">
-          <h4 class="text-xs font-bold text-slate-500 px-1">업체별 이번 달 합계</h4>
+          <h4 id="agency-breakdown-heading" class="text-xs font-bold text-slate-500 px-1">업체별 합계</h4>
           <div id="agency-breakdown-list" class="flex gap-2.5 overflow-x-auto no-scrollbar pb-1"></div>
         </div>
 
@@ -249,7 +254,7 @@
         <div class="bg-white rounded-3xl p-4 shadow-sm border border-slate-100 flex items-center justify-between gap-2">
           <div>
             <h3 class="text-base font-bold text-slate-900">개인 · 출강 지출내역</h3>
-            <p class="text-xs text-slate-500 mt-0.5">교통비, 교재비, 식비, 생활비 등을 따로 기록하세요.</p>
+            <p id="expense-period-summary-text" class="text-xs text-slate-500 mt-0.5">선택 기간 지출 합계: 0원</p>
           </div>
           <button id="open-add-expense-btn" class="bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold px-3.5 py-2.5 rounded-2xl shadow-md shadow-rose-200 flex items-center gap-1.5 active:scale-95 transition shrink-0">
             <i data-lucide="plus" class="w-4 h-4"></i>
@@ -258,6 +263,11 @@
         </div>
 
         <div class="bg-white rounded-3xl p-3.5 shadow-sm border border-slate-100 space-y-2.5">
+          <!-- 지출 기간(전체 / 월 선택) -->
+          <select id="expense-period-select" class="w-full bg-rose-50/60 border border-rose-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-400">
+            <option value="all">📅 전체 기간 보기</option>
+          </select>
+
           <div class="flex gap-1.5 overflow-x-auto no-scrollbar">
             <button data-exp-cat="all" class="exp-cat-btn active px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-white transition shrink-0">전체</button>
             <button data-exp-cat="교통비" class="exp-cat-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition shrink-0">🚗 교통비</button>
@@ -684,6 +694,10 @@
       return `${y}-${m}-${day}`;
     };
 
+    const getCurrentMonthPrefix = () => {
+      return `${todayObj.getFullYear()}-${String(todayObj.getMonth() + 1).padStart(2, '0')}`;
+    };
+
     const state = {
       currentYear: todayObj.getFullYear(),
       currentMonth: todayObj.getMonth(),
@@ -692,6 +706,8 @@
       lectures: [],
       agencies: [],
       expenses: [],
+      settlementPeriod: getCurrentMonthPrefix(), // 'all' 또는 'YYYY-MM'
+      expensePeriod: getCurrentMonthPrefix(),    // 'all' 또는 'YYYY-MM'
       filterStatus: 'all',
       filterAgency: 'all',
       filterExpenseCategory: 'all',
@@ -709,6 +725,12 @@
     };
 
     const formatKRW = (num) => new Intl.NumberFormat('ko-KR').format(Math.round(num || 0)) + '원';
+
+    const formatMonthLabel = (ym) => {
+      if (!ym || ym === 'all') return '전체 기간';
+      const [y, m] = ym.split('-');
+      return `${y}년 ${Number(m)}월`;
+    };
 
     const calculateNetAmount = (gross, taxType) => {
       const rate = parseFloat(taxType) || 0;
@@ -840,18 +862,46 @@
       showToast('업체 프리셋이 삭제되었습니다.');
     }
 
-    function getMonthPrefix() {
+    function getHeaderMonthPrefix() {
       return `${state.currentYear}-${String(state.currentMonth + 1).padStart(2, '0')}`;
     }
 
     function getMonthLectures() {
-      const prefix = getMonthPrefix();
+      const prefix = getHeaderMonthPrefix();
       return state.lectures.filter(l => l.date && l.date.startsWith(prefix));
     }
 
     function getMonthExpenses() {
-      const prefix = getMonthPrefix();
+      const prefix = getHeaderMonthPrefix();
       return state.expenses.filter(e => e.date && e.date.startsWith(prefix));
+    }
+
+    function getAvailableMonths(items) {
+      const set = new Set([getCurrentMonthPrefix(), getHeaderMonthPrefix()]);
+      items.forEach(item => {
+        if (item.date && item.date.length >= 7) {
+          set.add(item.date.slice(0, 7));
+        }
+      });
+      return Array.from(set).sort((a, b) => b.localeCompare(a));
+    }
+
+    function syncPeriodSelectOptions(selectEl, items, selectedPeriod) {
+      const months = getAvailableMonths(items);
+      const validSelection = (selectedPeriod === 'all' || months.includes(selectedPeriod))
+        ? selectedPeriod
+        : getCurrentMonthPrefix();
+
+      selectEl.innerHTML = `<option value="all">📅 전체 기간 보기</option>`;
+      months.forEach(ym => {
+        const opt = document.createElement('option');
+        opt.value = ym;
+        opt.textContent = `🗓️ ${formatMonthLabel(ym)}`;
+        if (opt.value === validSelection) opt.selected = true;
+        selectEl.appendChild(opt);
+      });
+
+      return validSelection;
     }
 
     function renderAll() {
@@ -1020,7 +1070,7 @@
         <div class="flex items-start justify-between gap-2">
           <div class="space-y-1 min-w-0 flex-1 cursor-pointer edit-lecture-trigger">
             <div class="flex items-center gap-1.5 flex-wrap">
-              ${showDate ? `<span class="text-[11px] font-bold text-slate-500 bg-white px-2 py-0.5 rounded-md border border-slate-200">${lec.date.slice(5).replace('-', '/')}</span>` : ''}
+              ${showDate ? `<span class="text-[11px] font-bold text-slate-500 bg-white px-2 py-0.5 rounded-md border border-slate-200">${lec.date.slice(0, 7).replace('-', '.')} ${lec.date.slice(8)}일</span>` : ''}
               <span class="${c.bg} ${c.text} text-[11px] font-extrabold px-2 py-0.5 rounded-lg">${lec.agency}</span>
               <span class="text-xs font-bold text-slate-700 bg-white px-2 py-0.5 rounded-lg border border-slate-200">${lec.sessions}차시</span>
             </div>
@@ -1065,7 +1115,7 @@
       card.innerHTML = `
         <div class="min-w-0 flex-1 cursor-pointer edit-expense-trigger space-y-1">
           <div class="flex items-center gap-1.5 flex-wrap">
-            ${showDate ? `<span class="text-[11px] font-bold text-slate-500 bg-white px-2 py-0.5 rounded-md border border-slate-200">${exp.date.slice(5).replace('-', '/')}</span>` : ''}
+            ${showDate ? `<span class="text-[11px] font-bold text-slate-500 bg-white px-2 py-0.5 rounded-md border border-slate-200">${exp.date.slice(0, 7).replace('-', '.')} ${exp.date.slice(8)}일</span>` : ''}
             <span class="bg-rose-100 text-rose-700 text-[11px] font-extrabold px-2 py-0.5 rounded-lg">${exp.category || '생활·기타'}</span>
           </div>
           <h4 class="text-sm font-bold text-slate-900 truncate">${exp.title}</h4>
@@ -1082,27 +1132,47 @@
       return card;
     }
 
+    function getFilteredSettlementLectures() {
+      return state.lectures.filter(l => {
+        if (state.settlementPeriod !== 'all' && !(l.date || '').startsWith(state.settlementPeriod)) return false;
+        if (state.filterStatus !== 'all' && l.status !== state.filterStatus) return false;
+        if (state.filterAgency !== 'all' && l.agency !== state.filterAgency) return false;
+        return true;
+      });
+    }
+
     function renderSettlementTab() {
-      const monthLectures = getMonthLectures();
+      const periodSelect = document.getElementById('settlement-period-select');
+      state.settlementPeriod = syncPeriodSelectOptions(periodSelect, state.lectures, state.settlementPeriod);
+
+      const periodLectures = state.lectures.filter(l =>
+        state.settlementPeriod === 'all' || (l.date || '').startsWith(state.settlementPeriod)
+      );
+
       const agencySelect = document.getElementById('agency-filter-select');
-      const uniqueAgencies = [...new Set(monthLectures.map(l => l.agency))];
-      const currentVal = state.filterAgency;
+      const uniqueAgencies = [...new Set(periodLectures.map(l => l.agency))];
+      if (state.filterAgency !== 'all' && !uniqueAgencies.includes(state.filterAgency)) {
+        state.filterAgency = 'all';
+      }
       agencySelect.innerHTML = `<option value="all">🏢 모든 출강 업체 보기 (${uniqueAgencies.length}곳)</option>`;
       uniqueAgencies.forEach(ag => {
         const opt = document.createElement('option');
         opt.value = ag;
         opt.textContent = ag;
-        if (ag === currentVal) opt.selected = true;
+        if (ag === state.filterAgency) opt.selected = true;
         agencySelect.appendChild(opt);
       });
+
+      document.getElementById('agency-breakdown-heading').textContent =
+        `${formatMonthLabel(state.settlementPeriod)} 업체별 합계`;
 
       const breakdownList = document.getElementById('agency-breakdown-list');
       breakdownList.innerHTML = '';
       if (uniqueAgencies.length === 0) {
-        breakdownList.innerHTML = `<div class="text-xs text-slate-400 py-2 px-1">이번 달 출강 내역이 없습니다.</div>`;
+        breakdownList.innerHTML = `<div class="text-xs text-slate-400 py-2 px-1">선택한 기간의 출강 내역이 없습니다.</div>`;
       } else {
         uniqueAgencies.forEach(ag => {
-          const agLecs = monthLectures.filter(l => l.agency === ag);
+          const agLecs = periodLectures.filter(l => l.agency === ag);
           const agSessions = agLecs.reduce((s, l) => s + (parseFloat(l.sessions) || 0), 0);
           const agNet = agLecs.reduce((s, l) => s + (parseFloat(l.netAmount) || 0), 0);
           const unpaidCount = agLecs.filter(l => l.status !== 'paid').length;
@@ -1126,12 +1196,7 @@
         });
       }
 
-      const filtered = monthLectures.filter(l => {
-        if (state.filterStatus !== 'all' && l.status !== state.filterStatus) return false;
-        if (state.filterAgency !== 'all' && l.agency !== state.filterAgency) return false;
-        return true;
-      });
-
+      const filtered = getFilteredSettlementLectures();
       const listContainer = document.getElementById('settlement-list-container');
       listContainer.innerHTML = '';
 
@@ -1139,7 +1204,7 @@
         listContainer.innerHTML = `
           <div class="bg-white rounded-3xl p-8 text-center border border-slate-100 space-y-2">
             <p class="text-sm font-bold text-slate-600">조건에 맞는 정산 내역이 없습니다.</p>
-            <p class="text-xs text-slate-400">상단 필터를 변경하거나 새 강의를 등록해 보세요.</p>
+            <p class="text-xs text-slate-400">기간이나 상태 필터를 변경하거나 새 강의를 등록해 보세요.</p>
           </div>
         `;
         return;
@@ -1153,26 +1218,38 @@
       });
     }
 
-    function renderExpensesTab() {
-      const monthExpenses = getMonthExpenses().filter(e => {
+    function getFilteredExpenses() {
+      return state.expenses.filter(e => {
+        if (state.expensePeriod !== 'all' && !(e.date || '').startsWith(state.expensePeriod)) return false;
         if (state.filterExpenseCategory !== 'all' && e.category !== state.filterExpenseCategory) return false;
         return true;
       });
+    }
+
+    function renderExpensesTab() {
+      const periodSelect = document.getElementById('expense-period-select');
+      state.expensePeriod = syncPeriodSelectOptions(periodSelect, state.expenses, state.expensePeriod);
+
+      const filtered = getFilteredExpenses();
+      const totalFilteredExp = filtered.reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0);
+
+      document.getElementById('expense-period-summary-text').textContent =
+        `${formatMonthLabel(state.expensePeriod)} 지출 합계: ${formatKRW(totalFilteredExp)} (${filtered.length}건)`;
 
       const container = document.getElementById('expenses-list-container');
       container.innerHTML = '';
 
-      if (monthExpenses.length === 0) {
+      if (filtered.length === 0) {
         container.innerHTML = `
           <div class="bg-white rounded-3xl p-8 text-center border border-dashed border-slate-200 space-y-2">
-            <p class="text-sm font-bold text-slate-600">이번 달 등록된 지출 내역이 없습니다.</p>
-            <p class="text-xs text-slate-400">오른쪽 위 '지출 추가' 버튼으로 교통비나 생활 지출을 기록해 보세요.</p>
+            <p class="text-sm font-bold text-slate-600">선택한 조건의 지출 내역이 없습니다.</p>
+            <p class="text-xs text-slate-400">기간을 '전체 기간'으로 바꾸거나 '지출 추가' 버튼으로 기록해 보세요.</p>
           </div>
         `;
         return;
       }
 
-      monthExpenses.forEach(exp => {
+      filtered.forEach(exp => {
         container.appendChild(createExpenseCardElement(exp, true));
       });
     }
@@ -1409,7 +1486,7 @@
     function exportMonthToICS() {
       const monthLectures = getMonthLectures();
       if (monthLectures.length === 0) {
-        showToast('이번 달에 내보낼 강의 일정이 없습니다.', 'error');
+        showToast('선택한 달에 내보낼 강의 일정이 없습니다.', 'error');
         return;
       }
 
@@ -1452,18 +1529,21 @@
       showToast('캘린더 파일(.ics)이 다운로드되었습니다!');
     }
 
-    function exportMonthToCSV() {
-      const monthLectures = getMonthLectures();
-      const monthExpenses = getMonthExpenses();
-      if (monthLectures.length === 0 && monthExpenses.length === 0) {
-        showToast('이번 달에 다운로드할 내역이 없습니다.', 'error');
+    function exportSettlementToCSV() {
+      const targetLectures = getFilteredSettlementLectures();
+      const targetExpenses = state.expenses.filter(e =>
+        state.settlementPeriod === 'all' || (e.date || '').startsWith(state.settlementPeriod)
+      );
+
+      if (targetLectures.length === 0 && targetExpenses.length === 0) {
+        showToast('다운로드할 내역이 없습니다.', 'error');
         return;
       }
 
       const headers = ['구분', '일자', '카테고리/업체', '내용/강의명', '차시', '세전금액', '실수령/지출금액', '상태', '메모'];
       const rows = [];
 
-      monthLectures.forEach(l => {
+      targetLectures.forEach(l => {
         rows.push([
           '수입(강의)',
           l.date,
@@ -1477,7 +1557,7 @@
         ]);
       });
 
-      monthExpenses.forEach(e => {
+      targetExpenses.forEach(e => {
         rows.push([
           '지출',
           e.date,
@@ -1493,12 +1573,13 @@
 
       rows.sort((a, b) => a[1].localeCompare(b[1]));
 
+      const periodSlug = state.settlementPeriod === 'all' ? '전체기간' : state.settlementPeriod;
       const csvString = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
       const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `수입지출내역_${state.currentYear}년_${state.currentMonth + 1}월.csv`;
+      link.download = `수입지출내역_${periodSlug}.csv`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -1726,6 +1807,18 @@
         }
       });
 
+      document.getElementById('settlement-period-select').addEventListener('change', (e) => {
+        state.settlementPeriod = e.target.value;
+        renderSettlementTab();
+        if (window.lucide) lucide.createIcons();
+      });
+
+      document.getElementById('expense-period-select').addEventListener('change', (e) => {
+        state.expensePeriod = e.target.value;
+        renderExpensesTab();
+        if (window.lucide) lucide.createIcons();
+      });
+
       document.querySelectorAll('.status-filter-btn').forEach(btn => {
         btn.addEventListener('click', () => {
           state.filterStatus = btn.dataset.statusFilter;
@@ -1736,6 +1829,7 @@
           btn.classList.add('active', 'bg-slate-800', 'text-white', 'font-bold');
           btn.classList.remove('bg-slate-100', 'text-slate-600', 'font-semibold');
           renderSettlementTab();
+          if (window.lucide) lucide.createIcons();
         });
       });
 
@@ -1749,16 +1843,18 @@
           btn.classList.add('active', 'bg-slate-800', 'text-white', 'font-bold');
           btn.classList.remove('bg-slate-100', 'text-slate-600', 'font-semibold');
           renderExpensesTab();
+          if (window.lucide) lucide.createIcons();
         });
       });
 
       document.getElementById('agency-filter-select').addEventListener('change', (e) => {
         state.filterAgency = e.target.value;
         renderSettlementTab();
+        if (window.lucide) lucide.createIcons();
       });
 
       document.getElementById('export-ics-btn').addEventListener('click', exportMonthToICS);
-      document.getElementById('export-csv-btn').addEventListener('click', exportMonthToCSV);
+      document.getElementById('export-csv-btn').addEventListener('click', exportSettlementToCSV);
     }
 
     window.addEventListener('DOMContentLoaded', () => {
